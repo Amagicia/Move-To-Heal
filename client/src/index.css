@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans antialiased overflow-x-hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl;
+  }
+  
+  .glass-panel {
+    @apply bg-white/40 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgb(0,0,0,0.02)];
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white font-semibold py-3 px-8 rounded-2xl shadow-[0_4px_14px_rgba(120,170,195,0.39)] hover:shadow-[0_6px_20px_rgba(120,170,195,0.23)] hover:-translate-y-[1px] transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-primary font-semibold py-3 px-8 rounded-2xl border border-primary/20 shadow-sm hover:bg-primary/5 hover:-translate-y-[1px] transition-all duration-300;
+  }
+
+  .input-field {
+    @apply w-full border border-slate-200/60 bg-white/50 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all duration-300;
+  }
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
