@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import FeatureCard from "../components/FeatureCard";
 import StatBadge from "../components/StatBadge";
+import ThreeDStats from "../components/ThreeDStats";
 import {
     Eye,
     Dna,
@@ -10,17 +11,15 @@ import {
     Zap,
     ClipboardList,
     AlertTriangle,
+    Activity,
+    ShieldCheck,
 } from "lucide-react";
-
+import MedicalHelix from "../components/MedicalHelix";
 const Home = () => {
-    // Cursor background state
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [wordIndex, setWordIndex] = useState(0);
+    const [fadeProp, setFadeProp] = useState(true);
 
-    const handleMouseMove = (e) => {
-        setMousePos({ x: e.clientX, y: e.clientY });
-    };
-
-    // --- ROTATING TEXT LOGIC ---
     const dynamicWords = [
         "Reimagined.",
         "Elevated.",
@@ -28,25 +27,19 @@ const Home = () => {
         "Decoded.",
         "Prioritized.",
     ];
-    const [wordIndex, setWordIndex] = useState(0);
-    const [fadeProp, setFadeProp] = useState(true);
+
+    const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
 
     useEffect(() => {
         const wordInterval = setInterval(() => {
-            // 1. Trigger fade out
             setFadeProp(false);
-
-            // 2. Wait for fade out to complete, change word, and fade back in
             setTimeout(() => {
-                setWordIndex(
-                    (prevIndex) => (prevIndex + 1) % dynamicWords.length
-                );
+                setWordIndex((prev) => (prev + 1) % dynamicWords.length);
                 setFadeProp(true);
-            }, 500); // 500ms matches the Tailwind duration-500 class
-        }, 3500); // Change word every 3.5 seconds
-
+            }, 500);
+        }, 3500);
         return () => clearInterval(wordInterval);
-    }, [dynamicWords.length]);
+    }, []);
 
     return (
         <div
@@ -70,58 +63,60 @@ const Home = () => {
 
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 flex flex-col items-center">
                 {/* --- HERO SECTION --- */}
-                <header className="text-center w-full max-w-5xl mt-12 mb-28 border-b border-[#EAEAEA]/10 pb-20">
-                    <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#08D9D6]/35 bg-[#08D9D6]/15 text-[#08D9D6] text-xs font-bold tracking-widest uppercase mb-10 shadow-lg">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF2E63] animate-pulse"></span>
-                        Intelligence Meets Compassion: Move to Heal
+                <section className="relative w-full min-h-[80vh] flex flex-col md:flex-row items-center justify-between gap-12 mb-20">
+                    {/* Left Side: Content */}
+                    <div className="md:w-3/5 text-left z-20">
+                        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-[#08D9D6]/30 bg-[#08D9D6]/10 text-[#08D9D6] text-xs font-bold tracking-widest uppercase mb-8 shadow-glow">
+                            <span className="w-2 h-2 rounded-full bg-[#FF2E63] animate-ping"></span>
+                            Move to Heal Initiative
+                        </div>
+
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-[#EAEAEA] mb-6 tracking-tighter leading-none">
+                            Precision Path. <br />
+                            <span className="text-[#EAEAEA]/80">
+                                Your Health,{" "}
+                            </span>
+                            <span
+                                className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#08D9D6] to-[#00FFF0] transition-all duration-500 ${
+                                    fadeProp
+                                        ? "opacity-100 translate-x-0"
+                                        : "opacity-0 -translate-x-4"
+                                }`}
+                            >
+                                {dynamicWords[wordIndex]}
+                            </span>
+                        </h1>
+
+                        <p className="text-lg md:text-xl text-[#EAEAEA]/70 mb-10 max-w-xl leading-relaxed">
+                            AegisMed's neural engine analyzes scans and symptoms
+                            instantly, paving the way for proactive wellness
+                            through advanced AI.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-5">
+                            <Link
+                                to="/diagnose"
+                                className="px-8 py-4 bg-[#08D9D6] text-[#252A34] font-black rounded-xl hover:scale-105 transition-all shadow-[0_0_30px_rgba(8,217,214,0.4)] text-center uppercase tracking-widest"
+                            >
+                                Start Free Scan
+                            </Link>
+                            <Link
+                                to="/about"
+                                className="px-8 py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold rounded-xl hover:border-[#FF2E63] hover:text-[#FF2E63] transition-all text-center uppercase tracking-widest"
+                            >
+                                The Tech Stack
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* ANIMATED HEADLINE */}
-                    <h1 className="text-6xl md:text-8xl font-extrabold text-[#EAEAEA] mb-8 tracking-tighter leading-tight md:leading-none min-h-[140px] md:min-h-[192px]">
-                        Precision Path. <br />
-                        <span className="text-[#EAEAEA]/90">Your Health, </span>
-                        <br className="block md:hidden" />
-                        <span
-                            className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#08D9D6] to-[#08D9D6]/50 transition-all duration-500 ease-in-out transform ${
-                                fadeProp
-                                    ? "opacity-100 translate-y-0"
-                                    : "opacity-0 translate-y-6"
-                            }`}
-                        >
-                            {dynamicWords[wordIndex]}
-                        </span>
-                    </h1>
-
-                    <p className="text-xl md:text-2xl text-[#EAEAEA]/75 mb-14 max-w-3xl mx-auto leading-relaxed">
-                        Move towards a healthier you. AegisMed's neural engine
-                        analyzes scans and symptoms instantly, paving the way
-                        for proactive wellness and confident healthcare
-                        decisions.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-                        <Link
-                            to="/diagnose"
-                            className="px-12 py-5 bg-[#08D9D6] text-[#252A34] font-black rounded-lg hover:scale-105 transition-all hover:shadow-[0_0_40px_rgba(8,217,214,0.5)] w-full sm:w-auto text-lg uppercase tracking-wider"
-                        >
-                            Start Your Healing Scan
-                        </Link>
-                        <Link
-                            to="/about"
-                            className="px-12 py-5 border-2 border-[#EAEAEA]/25 text-[#EAEAEA] font-bold rounded-lg hover:border-[#FF2E63] hover:text-[#FF2E63] transition-all w-full sm:w-auto text-lg uppercase tracking-wider hover:scale-105"
-                        >
-                            Explore Our Approach
-                        </Link>
+                    {/* Right Side: 3D Helix Container */}
+                    <div className="md:w-2/5 h-[500px] w-full relative">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#08D9D6]/5 to-transparent rounded-full blur-3xl" />
+                        <MedicalHelix />
                     </div>
-                </header>
-
-                {/* --- STATS SECTION --- */}
-                <section className="flex flex-wrap justify-center gap-10 mb-32 w-full max-w-6xl">
-                    <StatBadge value="99.8%" label="Accuracy Rate" />
-                    <StatBadge value="< 2s" label="Processing Time" />
-                    <StatBadge value="2.4M+" label="Parameters Scanned" />
-                    <StatBadge value="Secure" label="Data Encryption" />
                 </section>
+                {/* --- STATS SECTION --- */}
+                <ThreeDStats />
 
                 {/* --- THE HEALING PIPELINE (Feature Flow) --- */}
                 <section className="w-full max-w-7xl mb-32 border-t border-[#EAEAEA]/10 pt-24 pb-16 px-6 relative">
@@ -146,8 +141,8 @@ const Home = () => {
 
                         {/* Step 1 */}
                         <div className="relative z-10 flex flex-col items-center text-center group">
-                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-4xl mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform rotate-3 group-hover:rotate-0">
-                                💬
+                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-[#08D9D6] mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform rotate-3 group-hover:rotate-0">
+                                <MessageSquareText size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
                                 1. NLP Symptom Tracking
@@ -161,8 +156,8 @@ const Home = () => {
 
                         {/* Step 2 */}
                         <div className="relative z-10 flex flex-col items-center text-center group mt-8 md:mt-0">
-                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-4xl mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform -rotate-3 group-hover:rotate-0">
-                                📷
+                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-[#08D9D6] mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform -rotate-3 group-hover:rotate-0">
+                                <Camera size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
                                 2. Visual AI Scans
@@ -176,8 +171,8 @@ const Home = () => {
 
                         {/* Step 3 */}
                         <div className="relative z-10 flex flex-col items-center text-center group mt-8 md:mt-0">
-                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#FF2E63]/40 flex items-center justify-center text-4xl mb-6 shadow-[0_0_20px_rgba(255,46,99,0.15)] group-hover:scale-110 group-hover:border-[#FF2E63] group-hover:shadow-[0_0_30px_rgba(255,46,99,0.3)] transition-all duration-300 transform rotate-3 group-hover:rotate-0">
-                                ⚡
+                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#FF2E63]/40 flex items-center justify-center text-[#FF2E63] mb-6 shadow-[0_0_20px_rgba(255,46,99,0.15)] group-hover:scale-110 group-hover:border-[#FF2E63] group-hover:shadow-[0_0_30px_rgba(255,46,99,0.3)] transition-all duration-300 transform rotate-3 group-hover:rotate-0">
+                                <Zap size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
                                 3. Instant Triage
@@ -191,8 +186,8 @@ const Home = () => {
 
                         {/* Step 4 */}
                         <div className="relative z-10 flex flex-col items-center text-center group mt-8 md:mt-0">
-                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-4xl mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform -rotate-3 group-hover:rotate-0">
-                                📋
+                            <div className="w-24 h-24 rounded-2xl bg-[#252A34] border border-[#08D9D6]/30 flex items-center justify-center text-[#08D9D6] mb-6 shadow-[0_0_20px_rgba(8,217,214,0.1)] group-hover:scale-110 group-hover:border-[#08D9D6] group-hover:shadow-[0_0_30px_rgba(8,217,214,0.3)] transition-all duration-300 transform -rotate-3 group-hover:rotate-0">
+                                <ClipboardList size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
                                 4. Actionable Reports
@@ -201,6 +196,62 @@ const Home = () => {
                                 Receive a clear, plain-English summary of
                                 potential conditions and exact next steps to
                                 take to your healthcare provider.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* --- NEW SECTION: SUPPORTED CAPABILITIES --- */}
+                <section className="w-full max-w-6xl mb-32 border-t border-[#EAEAEA]/10 pt-24 px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-[#08D9D6] text-sm font-bold uppercase tracking-widest mb-3">
+                            Comprehensive Analysis
+                        </h2>
+                        <h3 className="text-4xl font-black text-[#EAEAEA] tracking-tight">
+                            What AegisMed Detects
+                        </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="bg-[#EAEAEA]/5 border border-[#EAEAEA]/10 rounded-2xl p-8 hover:bg-[#EAEAEA]/10 transition-colors">
+                            <Activity
+                                className="text-[#08D9D6] mb-6"
+                                size={36}
+                            />
+                            <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
+                                General Symptoms
+                            </h4>
+                            <p className="text-[#EAEAEA]/70 leading-relaxed">
+                                From chronic fatigue to sudden acute pain, our
+                                NLP engine cross-references thousands of symptom
+                                combinations to provide accurate preliminary
+                                triage.
+                            </p>
+                        </div>
+                        <div className="bg-[#EAEAEA]/5 border border-[#EAEAEA]/10 rounded-2xl p-8 hover:bg-[#EAEAEA]/10 transition-colors">
+                            <Eye className="text-[#FF2E63] mb-6" size={36} />
+                            <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
+                                Dermatology
+                            </h4>
+                            <p className="text-[#EAEAEA]/70 leading-relaxed">
+                                Upload close-up imagery of rashes, moles, or
+                                lesions. Our vision model identifies visual
+                                markers associated with over 150 dermatological
+                                conditions.
+                            </p>
+                        </div>
+                        <div className="bg-[#EAEAEA]/5 border border-[#EAEAEA]/10 rounded-2xl p-8 hover:bg-[#EAEAEA]/10 transition-colors">
+                            <ShieldCheck
+                                className="text-[#08D9D6] mb-6"
+                                size={36}
+                            />
+                            <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
+                                Radiology Assist
+                            </h4>
+                            <p className="text-[#EAEAEA]/70 leading-relaxed">
+                                Need a second look at an X-ray or MRI? AegisMed
+                                highlights anomalies and provides supplementary
+                                context for you and your specialist to review.
                             </p>
                         </div>
                     </div>
@@ -229,7 +280,10 @@ const Home = () => {
                         </p>
                         <p className="text-base text-[#FF2E63] font-semibold bg-[#FF2E63]/10 p-5 rounded-lg border border-[#FF2E63]/30">
                             <span className="font-extrabold text-lg mr-2">
-                            <AlertTriangle size={20} className="inline mr-2 -mt-1" />
+                                <AlertTriangle
+                                    size={20}
+                                    className="inline mr-2 -mt-1"
+                                />
                             </span>{" "}
                             AegisMed is an AI-powered informational tool. It is
                             NOT a substitute for professional medical advice,
