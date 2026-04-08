@@ -1,68 +1,70 @@
-import React, { useRef } from 'react';
-import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, FileUp, Activity, History, Stethoscope, LogOut } from 'lucide-react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-
-const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Diagnose', path: '/diagnose', icon: FileUp },
-  { name: 'Latest Report', path: '/report', icon: Activity },
-  { name: 'History', path: '/history', icon: History },
-];
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Zap, Clock, Settings, LogOut, Activity } from 'lucide-react';
 
 const Sidebar = () => {
-  const sidebarRef = useRef();
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-  useGSAP(() => {
-    gsap.fromTo(sidebarRef.current, 
-      { x: -50, opacity: 0 }, 
-      { x: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }
-    );
-  }, []);
+  const navItems = [
+    { name: 'Home', path: '/', icon: <Home size={22} /> },
+    { name: 'Diagnose', path: '/diagnose', icon: <Zap size={22} /> },
+    { name: 'History', path: '/history', icon: <Clock size={22} /> },
+    { name: 'Settings', path: '/settings', icon: <Settings size={22} /> },
+  ];
 
   return (
-    <aside 
-      ref={sidebarRef}
-      className="fixed left-0 top-0 h-screen w-[250px] bg-white border-r border-slate-200/60 flex flex-col z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)]"
-    >
-      <div className="h-20 flex items-center px-8 border-b border-slate-100 mb-6">
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-            <Stethoscope className="w-5 h-5 text-white" />
+    <aside className="w-64 bg-[#1A1D24] border-r border-[#EAEAEA]/10 h-screen hidden md:flex flex-col sticky top-0 z-50">
+      {/* Brand Logo */}
+      <div className="h-24 flex items-center px-8 border-b border-[#EAEAEA]/10">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="p-2 bg-[#08D9D6]/10 rounded-lg group-hover:bg-[#08D9D6]/20 transition-all">
+            <Activity className="text-[#08D9D6]" size={24} />
           </div>
-          <span className="font-extrabold tracking-tight text-slate-800 text-lg">More to Heal</span>
+          <span className="text-xl font-black text-[#EAEAEA] tracking-tighter">
+            MOVE <span className="text-[#08D9D6]">TO</span> HEAL
+          </span>
         </Link>
       </div>
 
-      <div className="px-4 flex-1">
-        <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Main Menu</p>
-        <nav className="flex flex-col gap-2">
-          {navItems.map((item) => (
-            <NavLink
+      {/* Main Nav */}
+      <nav className="flex-1 px-4 py-8 space-y-2">
+        {navItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <Link
               key={item.name}
               to={item.path}
-              className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all duration-300
-                ${isActive 
-                  ? 'bg-primary/10 text-primary shadow-[inset_0_2px_4px_rgba(120,170,195,0.1)]' 
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                }
-              `}
+              className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${
+                isActive
+                  ? 'bg-[#08D9D6] text-[#252A34] shadow-[0_0_20px_rgba(8,217,214,0.3)]'
+                  : 'text-[#EAEAEA]/50 hover:bg-[#252A34] hover:text-[#EAEAEA]'
+              }`}
             >
-              <item.icon className={`w-5 h-5 ${location.pathname === item.path ? 'text-primary' : 'text-slate-400'}`} />
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
+              {item.icon}
+              <span className="tracking-widest uppercase text-xs">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-      <div className="p-6 border-t border-slate-100">
-        <Link to="/" className="flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors">
-          <LogOut className="w-5 h-5 text-slate-400" />
-          Exit Prototype
-        </Link>
+      {/* Bottom Profile / Logout */}
+      <div className="p-4 border-t border-[#EAEAEA]/10">
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#252A34] rounded-xl border border-[#EAEAEA]/5 mb-4">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#08D9D6] to-[#FF2E63] flex items-center justify-center text-[10px] font-black text-white">
+            JD
+          </div>
+          <div className="truncate">
+            <p className="text-xs font-bold text-[#EAEAEA] truncate">John Doe</p>
+            <p className="text-[10px] text-[#08D9D6] font-bold uppercase tracking-tighter">Pro Member</p>
+          </div>
+        </div>
+        
+        <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[#FF2E63] font-bold text-xs uppercase tracking-widest hover:bg-[#FF2E63]/10 transition-all">
+          <LogOut size={18} />
+          Sign Out
+        </button>
       </div>
+      
     </aside>
   );
 };

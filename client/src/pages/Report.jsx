@@ -1,60 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
-import ReportCard from '../components/ReportCard';
-
-const mockReports = {
-  skin: {
-    condition: "Benign Nevus",
-    confidence: "94.2%",
-    risk_level: "low",
-    description: "The AI model analyzed the uploaded image and identified characteristics consistent with a benign nevus. No immediate signs of melanoma or malignant growth were detected.",
-    precautions: ["Avoid excessive sun exposure during peak hours", "Use zinc-based sunscreen daily"],
-    recommended_actions: ["Monitor for changes in size, shape, or color", "Routine annual dermatological checkup"]
-  },
-  xray: {
-    condition: "Clear Lungs",
-    confidence: "98.1%",
-    risk_level: "low",
-    description: "The chest X-ray shows clear lung fields with no noticeable infiltrates, masses, or effusions. Heart size is within normal limits.",
-    precautions: ["Stay hydrated to maintain mucous membrane health"],
-    recommended_actions: ["Continue healthy habits", "Consult physician if symptoms persist"]
-  },
-  tumor: {
-    condition: "Suspicious Mass Identified",
-    confidence: "89.5%",
-    risk_level: "high",
-    description: "The detection model identified a defined mass that requires further investigation. The morphology appears irregular with lobulated margins.",
-    precautions: ["Do not ignore these results", "Avoid strenuous physical activity until cleared by a doctor"],
-    recommended_actions: ["IMMEDIATE: Schedule a biopsy", "Consult an oncologist", "Obtain a high-resolution MRI"]
-  },
-  general: {
-    condition: "Viral Infection Pattern",
-    confidence: "90.7%",
-    risk_level: "medium",
-    description: "Based on the reported symptoms, the pattern strongly matches a standard viral influenza infection. No severe acute markers detected.",
-    precautions: ["Isolate to prevent spreading", "Rest adequately for at least 48 hours"],
-    recommended_actions: ["Take fever-reducing medication if needed", "Drink plenty of electrolytes", "See doctor if fever persists > 3 days"]
-  }
-};
+import { useLocation, Link, Navigate } from 'react-router-dom';
 
 const Report = () => {
   const location = useLocation();
-  const [report, setReport] = useState(null);
+  const data = location.state?.reportData;
+  const originalSymptoms = location.state?.originalSymptoms;
 
-  useEffect(() => {
-    // Determine which mock report to show
-    const type = location.state?.scanType || 'general';
-    setReport(mockReports[type]);
-  }, [location.state]);
+  // Protect route if accessed directly without data
+  if (!data) {
+    return <Navigate to="/diagnose" replace />;
+  }
+
+  const isHighRisk = data.risk_level === 'High' || data.risk_level === 'Medium';
+  const accentColor = isHighRisk ? 'text-[#FF2E63] border-[#FF2E63]' : 'text-[#08D9D6] border-[#08D9D6]';
+  const bgColor = isHighRisk ? 'bg-[#FF2E63]/10' : 'bg-[#08D9D6]/10';
 
   return (
-    <div className="w-full">
-      <Link to="/history" className="inline-flex items-center gap-2 text-slate-500 hover:text-primary font-bold mb-8 transition-colors">
-        <ChevronLeft className="w-5 h-5" /> Back to History
-      </Link>
+    <div className="max-w-4xl mx-auto py-16 px-6">
       
-      {report && <ReportCard report={report} />}
+      <div className="flex justify-between items-end border-b border-[#EAEAEA]/10 pb-6 mb-10">
+        <div>
+          <h1 className="text-4xl font-bold text-[#EAEAEA] mb-2">Diagnostic Output</h1>
+          <p className="text-[#EAEAEA]/50 text-sm tracking-widest uppercase">Analysis Complete</p>
+        </div>
+        <div className={`px-6 py-2 border-2 ${accentColor} ${bgColor} rounded font-black tracking-widest uppercase`}>
+          Risk Level: {data.risk_level}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* Main Findings */}
+        <div className="md:col-span-2 space-y-8">
+          <div className="bg-[#252A34] border border-[#EAEAEA]/20 p-8 rounded-xl">
+            <h2 className="text-[#EAEAEA]/50 text-xs font-bold uppercase tracking-widest mb-4">Detected Conditions Pattern Match</h2>
+            <ul className="space-y-3">
+              {data.possible_conditions.map((condition, idx) => (
+                <li key={idx} className="flex items-center gap-3 text-xl text-[#EAEAEA] font-medium">
+                  <span className={`w-2 h-2 rounded-full ${isHighRisk ? 'bg-[#FF2E63]' : 'bg-[#08D9D6]'}`}></span>
+                  {condition}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={`border-l-4 ${accentColor} ${bgColor} p-8 rounded-r-xl`}>
+            <h2 className={`text-xs font-bold uppercase tracking-widest mb-3 ${accentColor}`}>Required Action Plan</h2>
+            <p className="text-[#EAEAEA] leading-relaxed text-lg">{data.advice}</p>
+          </div>
+        </div>
+
+        {/* Sidebar Data */}
+        <div className="space-y-6">
+          <div className="bg-[#252A34] border border-[#EAEAEA]/10 p-6 rounded-xl shadow-inner">
+            <h3 className="text-[#EAEAEA]/50 text-xs font-bold uppercase tracking-widest mb-3">Input Vector</h3>
+            <p className="text-[#EAEAEA]/80 italic text-sm">"{originalSymptoms || 'Visual data strictly analyzed.'}"</p>
+          </div>
+          
+          <Link 
+            to="/diagnose" 
+            className="block w-full text-center py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold uppercase tracking-widest rounded hover:border-[#08D9D6] hover:text-[#08D9D6] transition-all"
+          >
+            New Scan
+          </Link>
+        </div>
+
+      </div>
     </div>
   );
 };
