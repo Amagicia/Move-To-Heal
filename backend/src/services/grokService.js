@@ -2,20 +2,17 @@ import Groq from "groq-sdk";
 
 const analyzeWithGrok = async (category, durationDays, symptoms) => {
     try {
-        const groq = new Groq({
-            apiKey: process.env.GROQ_API_KEY,
-        });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-        // 🧠 THE FIX: Give the AI a strict grading rubric for Risk Levels
         const systemPrompt = `
-        You are AegisMed, an advanced medical AI triage system. Your job is to analyze patient symptoms and categorize their risk level accurately.
+        You are AegisMed, an advanced medical AI triage system. Analyze the patient's symptoms and output ONLY a valid JSON object.
 
         CRITICAL RISK RUBRIC:
-        - "High Risk": MUST be selected if symptoms include chest pain, severe shortness of breath, sudden numbness/weakness, signs of stroke, severe head trauma, or anything life-threatening.
-        - "Medium Risk": MUST be selected if symptoms include severe persistent pain (e.g., sharp abdominal pain), high fever over multiple days, suspected fractures, or chronic symptoms worsening after 7+ days.
-        - "Low Risk": Selected for mild, non-threatening issues like common colds, minor rashes, general fatigue, or minor muscle aches lasting 1-3 days.
+        - "High Risk": Chest pain, severe shortness of breath, sudden numbness/weakness, stroke signs, severe trauma, or life-threatening issues.
+        - "Medium Risk": Severe persistent pain, high fever over 3 days, suspected fractures, or chronic symptoms worsening after 7 days.
+        - "Low Risk": Mild issues like common colds, minor rashes, general fatigue, or minor muscle aches.
 
-        You MUST respond with ONLY a valid JSON object matching this exact schema:
+        REQUIRED JSON SCHEMA:
         {
           "risk_level": "High Risk" | "Medium Risk" | "Low Risk",
           "confidence": "percentage string (e.g., '92%')",
@@ -27,7 +24,8 @@ const analyzeWithGrok = async (category, durationDays, symptoms) => {
         }
         
         STRICT RULES:
-        - Output ONLY valid JSON. No markdown formatting.
+        - Output ONLY valid JSON.
+        - Do not include markdown tags like \`\`\`json.
         - DO NOT default to Low Risk. You MUST evaluate the severity of the text.
         `;
 
@@ -38,54 +36,37 @@ const analyzeWithGrok = async (category, durationDays, symptoms) => {
         `;
 
         const response = await groq.chat.completions.create({
-            model: "llama3-70b-8192", // 👈 Use Groq's most accurate reasoning model
+            model: "llama-3.3-70b-versatile", // The absolute best Groq model for JSON
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
             ],
-            temperature: 0.2, // 👈 Keep this low! High temp causes invalid JSON.
-            response_format: { type: "json_object" }, // 👈 FORCES Groq to return JSON only
+            temperature: 0.1, // Low temp for clinical consistency
+            response_format: { type: "json_object" }, 
         });
 
         let rawContent = response.choices[0]?.message?.content?.trim();
+        if (!rawContent) throw new Error("Empty response from Groq");
 
-        if (!rawContent) {
-            throw new Error("Empty response from Groq");
-        }
-
-        // Sanitize: Sometimes the AI wraps JSON in markdown blocks despite instructions
-        if (rawContent.startsWith("```json")) {
-            rawContent = rawContent.replace(/^```json\n/, "").replace(/\n```$/, "");
-        } else if (rawContent.startsWith("```")) {
-            rawContent = rawContent.replace(/^```\n/, "").replace(/\n```$/, "");
-        }
-
+        // Parse JSON safely
         let parsed;
         try {
             parsed = JSON.parse(rawContent);
-            console.log("=== SUCCESSFUL GROQ AI RESPONSE ===");
-            console.log("Risk Assessed:", parsed.risk_level);
+            console.log(`=== AI ASSESSED RISK LEVEL: ${parsed.risk_level} ===`);
         } catch (err) {
-            console.error("❌ Invalid JSON from Groq:\n", rawContent);
-            return {
-                risk_level: "Error",
-                confidence: "0%",
-                conditions: [],
-                summary: "AI response could not be parsed.",
-                specialists: [],
-                next_steps: [],
-                advice: "Please try again.",
-            };
+            console.error("❌ Invalid JSON from Groq:", rawContent);
+            throw new Error("Failed to parse AI output into JSON");
         }
 
         return parsed;
+
     } catch (error) {
         console.error("🔥 Groq Service Error:", error.message);
         return {
             risk_level: "Error",
             confidence: "0%",
             conditions: ["System Error"],
-            summary: "System error during diagnosis.",
+            summary: "System error during diagnosis connection.",
             specialists: [],
             next_steps: ["Please try again later."],
             advice: "Try again later.",

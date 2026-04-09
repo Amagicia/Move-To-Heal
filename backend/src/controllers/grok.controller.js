@@ -1,44 +1,49 @@
+/**
+ * Diagnose Controller
+ *
+ * Handles text-based symptom analysis via Groq LLM.
+ * Used when the user selects a symptom-based focus area
+ * (general, dermatology, respiratory, cardiology, radiology).
+ *
+ * POST /api/diagnose
+ *
+ * NOTE: No auth middleware — open access for now.
+ * TODO: Attach auth middleware when user system is enforced.
+ */
 
 import analyzeWithGrok from '../services/grokService.js';
 
 const generateDiagnosis = async (req, res) => {
     try {
-        console.log("BODY:", req.body);
-        // Extract form data fields
-        console.log("func called generatediagnosis");
-        
-        const { category, durationDays, symptoms } = req.body;
-        
-        // Extract the uploaded file (if provided)
-        // const file = req.file; 
+        let { category, durationDays, symptoms } = req.body;
+        const file = req.file;
 
-        // Basic Validation
-        // if ((!req.body.symptoms || req.body.symptoms.trim() === "") && !req.file) {
-        //     return res.status(400).json({
-        //       error: "Provide symptoms or telemetry file",
-        //     });
-        //   }
+        // Validation — need either text or a file
+        const hasNoText = !symptoms || symptoms === 'undefined' || symptoms.trim() === '';
 
-        console.log(`[AegisMed] Processing scan for ${category} (${durationDays} days)`);
+        if (hasNoText && !file) {
+            return res.status(400).json({
+                error: 'Please provide symptoms or upload a file.',
+            });
+        }
 
-        // NOTE: For this MVP, we are passing the text to Grok. 
-        // If Grok supports vision in your current tier, you would process 'file' here as well.
-        
-        // Call the Grok Service
-        const aiReport = await analyzeWithGrok(category, durationDays, symptoms);
+        // If image uploaded without text, create a system prompt for Groq
+        if (hasNoText && file) {
+            symptoms = `[SYSTEM NOTE: Patient uploaded a medical image "${file.originalname}" for ${category} without text. Acknowledge the upload, assign risk based on duration, and advise that a doctor should review the scan.]`;
+        }
 
-        // Send the AI generated JSON back to React
-        res.status(200).json(aiReport);
+        console.log(`[Diagnose] ${category} | ${durationDays} days`);
+
+        const report = await analyzeWithGrok(category, durationDays, symptoms);
+        res.status(200).json(report);
 
     } catch (error) {
-        console.error("Diagnosis Controller Error:", error);
-        
-        // Fallback gracefully if the AI fails or JSON parsing breaks
-        res.status(500).json({ 
-            error: "Neural Engine failed to synthesize data.",
-            details: error.message
+        console.error('[Diagnose] Error:', error.message);
+        res.status(500).json({
+            error: 'Diagnosis failed.',
+            details: error.message,
         });
     }
 };
 
-export default generateDiagnosis ;
+export default generateDiagnosis;
