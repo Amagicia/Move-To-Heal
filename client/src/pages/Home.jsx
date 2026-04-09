@@ -17,29 +17,26 @@ import {
 import MedicalHelix from "../components/MedicalHelix";
 const Home = () => {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    const dynamicWords = ["Optimized", "Intelligent", "Reimagined"];
+
     const [wordIndex, setWordIndex] = useState(0);
     const [fadeProp, setFadeProp] = useState(true);
 
-    const dynamicWords = [
-        "Reimagined.",
-        "Elevated.",
-        "Secured.",
-        "Decoded.",
-        "Prioritized.",
-    ];
-
-    const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-
     useEffect(() => {
-        const wordInterval = setInterval(() => {
+        const interval = setInterval(() => {
             setFadeProp(false);
+
             setTimeout(() => {
                 setWordIndex((prev) => (prev + 1) % dynamicWords.length);
                 setFadeProp(true);
-            }, 500);
-        }, 3500);
-        return () => clearInterval(wordInterval);
+            }, 300);
+        }, 2000);
+
+        return () => clearInterval(interval);
     }, []);
+
+    const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
 
     return (
         <div
@@ -63,10 +60,12 @@ const Home = () => {
 
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 flex flex-col items-center">
                 {/* --- HERO SECTION --- */}
-                <section className="relative w-full min-h-[80vh] flex flex-col md:flex-row items-center justify-between gap-12 mb-20">
-                    {/* Left Side: Content */}
+          
+
+                <section className="relative w-full min-h-[80vh] flex flex-col md:flex-row items-center justify-between gap-12 mb-20 px-6 md:px-12">
+                    {/* LEFT CONTENT */}
                     <div className="md:w-3/5 text-left z-20">
-                        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-[#08D9D6]/30 bg-[#08D9D6]/10 text-[#08D9D6] text-xs font-bold tracking-widest uppercase mb-8 shadow-glow">
+                        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-[#08D9D6]/30 bg-[#08D9D6]/10 text-[#08D9D6] text-xs font-bold tracking-widest uppercase mb-8">
                             <span className="w-2 h-2 rounded-full bg-[#FF2E63] animate-ping"></span>
                             Move to Heal Initiative
                         </div>
@@ -100,6 +99,7 @@ const Home = () => {
                             >
                                 Start Free Scan
                             </Link>
+
                             <Link
                                 to="/about"
                                 className="px-8 py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold rounded-xl hover:border-[#FF2E63] hover:text-[#FF2E63] transition-all text-center uppercase tracking-widest"
@@ -109,10 +109,15 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Right Side: 3D Helix Container */}
-                    <div className="md:w-2/5 h-[500px] w-full relative">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#08D9D6]/5 to-transparent rounded-full blur-3xl" />
-                        <MedicalHelix />
+                    {/* RIGHT SIDE - SPLINE */}
+                    <div className="md:w-2/5 w-full h-[400px] md:h-[500px] lg:h-[600px] relative flex items-center justify-center">
+                        {/* Glow effect */}
+                        <div className="absolute w-80 h-80 bg-[#08D9D6]/20 blur-3xl rounded-full"></div>
+
+                        {/* Spline Model */}
+                        <div className="relative w-full h-full">
+                            <MedicalHelix />
+                        </div>
                     </div>
                 </section>
                 {/* --- STATS SECTION --- */}

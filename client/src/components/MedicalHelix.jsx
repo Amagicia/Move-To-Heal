@@ -57,3 +57,23 @@ export default function MedicalHelix() {
         </div>
     );
 }
+// import Spline from "@splinetool/react-spline";
+
+// const MedicalHelix = () => {
+//   const handleLoad = (spline) => {
+//     console.log("Spline Loaded:", spline);
+//   };
+
+//   return (
+//     <div className="w-full h-full">
+//       <Spline
+//         // scene="https://prod.spline.design/VnjMhENtk6E1axDR/scene.splinecode"
+//         scene="https://prod.spline.design/nuQld7cV9dFYlSH2/scene.splinecode" 
+
+//         onLoad={handleLoad}
+//       />
+//     </div>
+//   );
+// };
+
+// export default MedicalHelix;

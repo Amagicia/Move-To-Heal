@@ -4,7 +4,7 @@ import FileUpload from '../components/FileUpload';
 import { 
     Dna, Clock, MessageSquareText, AlertTriangle, Camera, 
     CheckCircle2, BrainCircuit, Activity, FileText, 
-    Stethoscope, ListChecks, ShieldAlert 
+    Stethoscope, ListChecks, ShieldAlert, Download 
 } from 'lucide-react';
 
 const Diagnose = () => {
@@ -19,64 +19,17 @@ const Diagnose = () => {
 
     // --- UI Progression States ---
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [reportData, setReportData] = useState(null);
-
-    // --- Mock AI Logic (Expanded for Detailed UI) ---
-    const processAI = async () => {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const text = symptoms.toLowerCase();
-        
-        if (text.includes('chest') || category === 'cardiology') {
-            return {
-                risk_level: "High Risk",
-                confidence: "94.8%",
-                conditions: ["Possible Cardiac Event", "Severe Angina"],
-                summary: "Neural analysis of your inputted symptoms strongly correlates with acute myocardial distress. The combination of targeted pain and duration flags critical thresholds.",
-                specialists: ["Cardiologist", "Emergency Medicine"],
-                next_steps: [
-                    "Call emergency services immediately (112).",
-                    "Do not attempt to drive yourself to the hospital.",
-                    "Rest in a comfortable position while waiting for help.",
-                    "Have a list of your current medications ready for paramedics."
-                ],
-                advice: "Seek immediate emergency medical attention. Do not wait."
-            };
-        } else if (text.includes('pain') || parseInt(days) > 7) {
-            return {
-                risk_level: "Medium Risk",
-                confidence: "82.4%",
-                conditions: ["Chronic Inflammation", "Muscular Strain"],
-                summary: "Prolonged symptom duration indicates an underlying inflammatory response. While not immediately life-threatening, intervention is required to prevent degradation.",
-                specialists: ["General Practitioner", "Orthopedist"],
-                next_steps: [
-                    "Schedule a physical evaluation within 48 hours.",
-                    "Apply localized temperature therapy (ice/heat) as appropriate.",
-                    "Monitor for secondary symptoms like fever or swelling."
-                ],
-                advice: "Rest and hydration recommended. Professional evaluation required soon."
-            };
-        } else {
-            return {
-                risk_level: "Low Risk",
-                confidence: "89.1%",
-                conditions: ["General Fatigue", "Minor Viral Activity"],
-                summary: "Telemetry indicates normal immune system responses to minor external stressors. No critical anomalies detected in the current symptom vector.",
-                specialists: ["Primary Care Physician (if persists)"],
-                next_steps: [
-                    "Ensure a minimum of 8 hours of sleep.",
-                    "Increase water intake by 30%.",
-                    "Re-evaluate symptoms using AegisMed in 48 hours if no improvement."
-                ],
-                advice: "No immediate critical indicators detected. Monitor and rest."
-            };
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('====================================');
-        console.log("Data",category,days,symptoms,file);
-        console.log('====================================');
+        
+        console.log("=== 1. FORM SUBMITTED ===");
+        console.log("Category:", category, "| Days:", days);
+        console.log("Symptoms:", symptoms);
+        console.log("File:", file ? file.name : "No file attached");
+
         // 1. Validation
         if (!symptoms.trim() && !file) {
             setError('Please provide symptoms or upload a scan.');
@@ -84,7 +37,7 @@ const Diagnose = () => {
         }
 
         // 2. MOCK AUTH CHECK
-        const isUserLoggedIn = true; // Change to true to bypass
+        const isUserLoggedIn = true; 
         if (!isUserLoggedIn) {
             sessionStorage.setItem('pendingSymptoms', symptoms);
             sessionStorage.setItem('pendingCategory', category);
@@ -96,48 +49,81 @@ const Diagnose = () => {
         setIsSubmitting(true);
         
         try {
-            // ==========================================
-            // REAL BACKEND API CALL (Commented out)
-            // ==========================================
-            /*
-            // We use FormData because we are transmitting a file along with text
+            console.log("=== 2. PREPARING DATA FOR BACKEND ===");
             const formData = new FormData();
             formData.append('category', category);
-            formData.append('durationDays', days);
+            formData.append('durationDays', Number(days));
             formData.append('symptoms', symptoms);
+            
             if (file) {
                 formData.append('telemetryFile', file);
             }
 
-            const response = await fetch('https://api.aegismed.com/v1/analyze-symptoms', {
-                method: 'POST',
+            console.log("Sending POST request to http://localhost:5000/analyze_symptoms...");
+            const response = await fetch("http://localhost:5000/analyze_symptoms", {
+                method: "POST",
+                body: formData, 
+            });
+              
+            const data = await response.json();
+            
+            console.log("=== 3. DATA RECEIVED FROM BACKEND ===");
+            console.log(data); // 👈 THIS WILL SHOW YOU EXACTLY WHAT GROQ SENT BACK
+              
+            if (!response.ok) {
+                throw new Error(data.error || "Unknown server error");
+            }
+              
+            setReportData(data);
+
+        } catch (err) {
+            setError(err.message || 'Neural Engine Analysis failed. Please try again.');
+            console.error("=== API CRASH / ERROR ===", err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        setIsDownloading(true);
+        setError('');
+
+        try {
+            console.log("=== DOWNLOADING REPORT ===");
+            const response = await fetch("http://localhost:5000/download_report", {
+                method: "POST",
                 headers: {
-                    // Note: When using FormData, DO NOT set 'Content-Type'. 
-                    // The browser will automatically set it to 'multipart/form-data' with the correct boundary.
-                    // 'Authorization': `Bearer ${userToken}`
+                    "Content-Type": "application/json",
                 },
-                body: formData
+                body: JSON.stringify({
+                    category,
+                    days,
+                    symptoms,
+                    report: reportData
+                })
             });
 
             if (!response.ok) {
-                throw new Error(`Analysis failed with status: ${response.status}`);
+                throw new Error("Failed to generate report document.");
             }
 
-            const result = await response.json();
-            setReportData(result);
-            */
-
-            // ==========================================
-            // MOCK FALLBACK (Remove when API is active)
-            // ==========================================
-            // const result = await processAI();
-            // setReportData(result);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AegisMed_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            console.log("Download successful!");
 
         } catch (err) {
-            setError('Neural Engine Analysis failed. Please try again.');
-            console.error(err);
+            console.error("Download Error:", err);
+            setError("Could not download the report. Please try again.");
         } finally {
-            setIsSubmitting(false);
+            setIsDownloading(false);
         }
     };
 
@@ -147,6 +133,7 @@ const Diagnose = () => {
         setDays(1);
         setFile(null);
         setCategory('general');
+        setError('');
     };
 
     // ==========================================
@@ -175,13 +162,21 @@ const Diagnose = () => {
     // STATE 3: DETAILED REPORT UI
     // ==========================================
     if (reportData) {
-        const isHighRisk = reportData.risk_level === 'High Risk' || reportData.risk_level === 'Medium Risk';
+        // Fallback checks just in case the AI messes up the risk level string
+        const riskString = reportData.risk_level || "Unknown";
+        const isHighRisk = riskString.includes('High') || riskString.includes('Medium');
         const accentColor = isHighRisk ? 'text-[#FF2E63] border-[#FF2E63]' : 'text-[#08D9D6] border-[#08D9D6]';
         const bgColor = isHighRisk ? 'bg-[#FF2E63]/10' : 'bg-[#08D9D6]/10';
 
         return (
             <div className="w-full max-w-5xl mx-auto py-12 px-6 lg:px-12 relative z-10 min-h-screen animate-[fadeIn_0.5s_ease-in-out]">
                 
+                {error && (
+                    <div className="bg-[#FF2E63]/10 border border-[#FF2E63] text-[#FF2E63] px-4 py-3 rounded mb-8 text-sm font-medium">
+                        <AlertTriangle size={20} className="inline mr-2 -mt-1" /> {error}
+                    </div>
+                )}
+
                 {/* Header & Risk Badge */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#EAEAEA]/10 pb-6 mb-10 gap-4">
                     <div>
@@ -189,27 +184,25 @@ const Diagnose = () => {
                             <Activity className={accentColor} size={36} /> Comprehensive Output
                         </h1>
                         <p className="text-[#EAEAEA]/50 text-sm tracking-widest uppercase">
-                            Analysis Complete for: {category} | AI Confidence: <span className="text-[#08D9D6]">{reportData.confidence}</span>
+                            Analysis Complete for: {category} | AI Confidence: <span className="text-[#08D9D6]">{reportData.confidence || "N/A"}</span>
                         </p>
                     </div>
                     <div className={`px-8 py-3 border-2 ${accentColor} ${bgColor} rounded-lg font-black tracking-widest uppercase shadow-[0_0_20px_currentColor] flex items-center gap-2`}>
                         {isHighRisk && <ShieldAlert size={20} />}
-                        {reportData.risk_level}
+                        {riskString}
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    
                     {/* Left Column: Core Medical Details */}
                     <div className="md:col-span-2 space-y-6">
-                        
                         {/* Summary Block */}
                         <div className="bg-[#1A1D24]/80 border border-[#EAEAEA]/10 p-8 rounded-xl backdrop-blur-md">
                             <h2 className="text-[#EAEAEA]/50 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <FileText size={16} className="text-[#08D9D6]" /> Executive Summary
                             </h2>
                             <p className="text-[#EAEAEA]/90 leading-relaxed text-lg">
-                                {reportData.summary}
+                                {reportData.summary || "No summary provided by the neural engine."}
                             </p>
                         </div>
 
@@ -220,12 +213,17 @@ const Diagnose = () => {
                                     <Activity size={16} className="text-[#FF2E63]" /> Detected Pathology
                                 </h2>
                                 <ul className="space-y-3">
-                                    {reportData.conditions.map((condition, idx) => (
-                                        <li key={idx} className="flex items-start gap-3 text-[#EAEAEA] font-medium">
-                                            <span className={`mt-1.5 w-2 h-2 rounded-full ${isHighRisk ? 'bg-[#FF2E63]' : 'bg-[#08D9D6]'}`}></span>
-                                            {condition}
-                                        </li>
-                                    ))}
+                                    {/* DEFENSIVE MAPPING: Fallback to an empty array if missing */}
+                                    {(reportData.conditions || []).length > 0 ? (
+                                        reportData.conditions.map((condition, idx) => (
+                                            <li key={idx} className="flex items-start gap-3 text-[#EAEAEA] font-medium">
+                                                <span className={`mt-1.5 w-2 h-2 rounded-full ${isHighRisk ? 'bg-[#FF2E63]' : 'bg-[#08D9D6]'}`}></span>
+                                                {condition}
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="text-[#EAEAEA]/50 italic">No specific conditions flagged.</li>
+                                    )}
                                 </ul>
                             </div>
 
@@ -234,12 +232,17 @@ const Diagnose = () => {
                                     <Stethoscope size={16} className="text-[#08D9D6]" /> Recommended Specialists
                                 </h2>
                                 <ul className="space-y-3">
-                                    {reportData.specialists.map((specialist, idx) => (
-                                        <li key={idx} className="flex items-center gap-3 text-[#EAEAEA] font-medium">
-                                            <CheckCircle2 size={16} className="text-[#08D9D6]/50" />
-                                            {specialist}
-                                        </li>
-                                    ))}
+                                    {/* DEFENSIVE MAPPING: Fallback to an empty array if missing */}
+                                    {(reportData.specialists || []).length > 0 ? (
+                                        reportData.specialists.map((specialist, idx) => (
+                                            <li key={idx} className="flex items-center gap-3 text-[#EAEAEA] font-medium">
+                                                <CheckCircle2 size={16} className="text-[#08D9D6]/50" />
+                                                {specialist}
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="text-[#EAEAEA]/50 italic">No specialist recommendations.</li>
+                                    )}
                                 </ul>
                             </div>
                         </div>
@@ -249,14 +252,21 @@ const Diagnose = () => {
                             <h2 className={`text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 ${accentColor}`}>
                                 <ListChecks size={18} /> Immediate Action Plan
                             </h2>
-                            <p className="text-[#EAEAEA] font-bold text-lg mb-4">{reportData.advice}</p>
+                            <p className="text-[#EAEAEA] font-bold text-lg mb-4">
+                                {reportData.advice || "Please consult a healthcare professional."}
+                            </p>
                             <ul className="space-y-3">
-                                {reportData.next_steps.map((step, idx) => (
-                                    <li key={idx} className="flex items-start gap-3 text-[#EAEAEA]/80">
-                                        <span className="text-sm font-mono opacity-50 mt-0.5">0{idx + 1}.</span>
-                                        {step}
-                                    </li>
-                                ))}
+                                {/* DEFENSIVE MAPPING: THE PREVIOUS CRASH WAS HERE */}
+                                {(reportData.next_steps || []).length > 0 ? (
+                                    reportData.next_steps.map((step, idx) => (
+                                        <li key={idx} className="flex items-start gap-3 text-[#EAEAEA]/80">
+                                            <span className="text-sm font-mono opacity-50 mt-0.5">0{idx + 1}.</span>
+                                            {step}
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="text-[#EAEAEA]/50 italic">No immediate steps provided. Monitor symptoms.</li>
+                                )}
                             </ul>
                         </div>
                     </div>
@@ -298,12 +308,26 @@ const Diagnose = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-[#EAEAEA]/10 pt-8 flex justify-center">
+                {/* --- Bottom Actions: Reset & Download --- */}
+                <div className="border-t border-[#EAEAEA]/10 pt-8 flex flex-col sm:flex-row justify-center gap-6">
                     <button 
                         onClick={resetScan}
-                        className="px-12 py-4 border-2 border-[#08D9D6] text-[#08D9D6] font-black uppercase tracking-widest rounded-xl hover:bg-[#08D9D6] hover:text-[#252A34] transition-all shadow-[0_0_15px_rgba(8,217,214,0.2)] hover:shadow-[0_0_30px_rgba(8,217,214,0.5)]"
+                        className="px-10 py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold uppercase tracking-widest rounded-xl hover:border-[#08D9D6] hover:text-[#08D9D6] transition-all"
                     >
                         Initialize New Scan
+                    </button>
+                    
+                    <button 
+                        onClick={handleDownloadReport}
+                        disabled={isDownloading}
+                        className="px-10 py-4 bg-[#08D9D6] text-[#252A34] font-black uppercase tracking-widest rounded-xl hover:bg-[#08D9D6]/90 transition-all flex items-center justify-center gap-3 shadow-[0_0_15px_rgba(8,217,214,0.3)] disabled:opacity-50"
+                    >
+                        {isDownloading ? (
+                            <div className="w-5 h-5 border-2 border-[#252A34]/20 border-t-[#252A34] rounded-full animate-spin"></div>
+                        ) : (
+                            <Download size={20} />
+                        )}
+                        Download PDF Report
                     </button>
                 </div>
             </div>
