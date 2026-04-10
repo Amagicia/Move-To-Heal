@@ -51,10 +51,28 @@ app.add_middleware(
 # ============================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+
+# MODEL_CONFIG = {
+#     "brain": {
+#         "path": os.path.join(BASE_DIR, "brain_tumor_model.h5"),
+#         "input_size": (150, 150),  # <--- CHANGE THIS FROM 224 TO 150
+#         "labels": [
+#             "Glioma",
+#             "Meningioma",
+#             "No Tumor",
+#             "Pituitary Tumor",
+#         ],
+#     },
+#     # Check your other models (chest/skin) too. 
+#     # If they were also trained at 150x150, update them here as well.
+# }
+
+
 MODEL_CONFIG = {
     "brain": {
         "path": os.path.join(BASE_DIR, "brain_tumor_model.h5"),
-        "input_size": (224, 224),        # TODO: match your model's input shape
+         "input_size": (150, 150),      # TODO: match your model's input shape
         "labels": [                      # TODO: match your model's class order
             "Glioma",
             "Meningioma",
@@ -64,7 +82,7 @@ MODEL_CONFIG = {
     },
     "chest": {
         "path": os.path.join(BASE_DIR, "chest_tuberculosis_model.h5"),
-        "input_size": (224, 224),        # TODO: match your model's input shape
+          "input_size": (150, 150),       # TODO: match your model's input shape
         "labels": [                      # TODO: match your model's class order
             "Normal",
             "Tuberculosis",
@@ -73,7 +91,7 @@ MODEL_CONFIG = {
     },
     "skin": {
         "path": os.path.join(BASE_DIR, "skin_disease_model.h5"),
-        "input_size": (224, 224),        # TODO: match your model's input shape
+          "input_size": (150, 150),       # TODO: match your model's input shape
         "labels": [                      # TODO: match your model's class order
             "Actinic Keratosis",
             "Basal Cell Carcinoma",

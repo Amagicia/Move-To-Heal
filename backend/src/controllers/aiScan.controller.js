@@ -10,8 +10,7 @@
 import fs from 'fs';
 import analyzeWithGrok from '../services/grokService.js';
 
-const AI_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-
+const AI_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 const VALID_TYPES = ['brain', 'chest', 'skin'];
 
 const TYPE_TO_GROQ_CATEGORY = {
