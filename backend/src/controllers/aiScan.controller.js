@@ -2,6 +2,7 @@
  * AI Scan Controller
  *
  * Flow: React → Node.js (this) → Python FastAPI (.h5 model) → Groq LLM → React
+ * Saves every scan result to DB history automatically.
  *
  * POST /api/ai-scan       — Upload scan image → model prediction + Groq report
  * GET  /api/ai-scan/status — Check Python AI service health
@@ -9,6 +10,7 @@
 
 import fs from 'fs';
 import analyzeWithGrok from '../services/grokService.js';
+import Diagnosis from '../models/Diagnosis.model.js';
 
 const AI_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 const VALID_TYPES = ['brain', 'chest', 'skin'];
@@ -92,11 +94,35 @@ const analyzeWithAI = async (req, res) => {
             },
         };
 
+        // --- Step 4: Save to DB ────────────────────────
+        const saved = await Diagnosis.create({
+            type:       scanType,
+            mode:       'scan',
+            duration:   Number(durationDays) || 1,
+            symptoms:   symptoms || '',
+            risk_level:  groqReport.risk_level,
+            confidence:  groqReport.confidence,
+            summary:     groqReport.summary,
+            advice:      groqReport.advice,
+            conditions:          groqReport.conditions  || [],
+            specialists:         groqReport.specialists || [],
+            next_steps:          groqReport.next_steps  || [],
+            recommended_actions: groqReport.next_steps  || [],
+            ai_model_result: {
+                prediction:          modelResult.prediction,
+                confidence:          modelResult.confidence,
+                class_probabilities: modelResult.class_probabilities,
+                model_type:          modelResult.model_type,
+            },
+        });
+
+        console.log(`[AI Scan] ✅ Saved to history: ${saved._id}`);
+
         // Cleanup temp file
         try { fs.unlinkSync(file.path); } catch (_) {}
 
         console.log('[AI Scan] ✅ Report generated');
-        res.status(200).json(report);
+        res.status(200).json({ ...report, _id: saved._id });
 
     } catch (error) {
         console.error('[AI Scan] Error:', error.message);

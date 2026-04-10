@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FileUpload from '../components/FileUpload';
 import { 
     Dna, Clock, MessageSquareText, AlertTriangle, Camera, 
     CheckCircle2, BrainCircuit, Activity, FileText, 
-    Stethoscope, ListChecks, ShieldAlert, Download, Zap 
+    Stethoscope, ListChecks, ShieldAlert, Download, Zap, History,
+    Mic, Volume2, Loader2, StopCircle 
 } from 'lucide-react';
 
 const FOCUS_AREAS = [
@@ -17,6 +19,103 @@ const FOCUS_AREAS = [
 ];
 
 const Diagnose = () => {
+    const navigate = useNavigate();
+
+    const [isRecording, setIsRecording] = useState(false);
+    const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+
+    const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+    const [isFetchingTTS, setIsFetchingTTS] = useState(false);
+    const audioRef = useRef(null);
+
+    const toggleRecording = async () => {
+        if (isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    setIsProcessingAudio(true);
+                    const formData = new FormData();
+                    formData.append('file', audioBlob, 'recording.webm');
+                    try {
+                        const res = await fetch('http://localhost:5001/api/stt', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (data.transcript) {
+                             setSymptoms(prev => prev ? prev + ' ' + data.transcript : data.transcript);
+                        } else if (data.error) {
+                             setError("STT service error: " + data.error);
+                        }
+                    } catch(e) {
+                        console.error("STT Error", e);
+                        setError("Failed to process speech-to-text. Ensure speech service is running on port 5001.");
+                    } finally {
+                        setIsProcessingAudio(false);
+                    }
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+            } catch (e) {
+                 console.error("Mic Error", e);
+                 setError("Microphone access denied or unavailable.");
+            }
+        }
+    };
+
+    const handleTTS = async (text) => {
+        if (isPlayingTTS && audioRef.current) {
+             audioRef.current.pause();
+             setIsPlayingTTS(false);
+             return;
+        }
+        
+        if (!text) return;
+
+        setIsFetchingTTS(true);
+        try {
+             const res = await fetch('http://localhost:5001/api/tts', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ text })
+             });
+             const data = await res.json();
+             if (data.audio) {
+                 const audioSrc = "data:audio/wav;base64," + data.audio;
+                 const audio = new Audio(audioSrc);
+                 audioRef.current = audio;
+                 audio.onended = () => setIsPlayingTTS(false);
+                 audio.play();
+                 setIsPlayingTTS(true);
+             } else {
+                 setError("Failed to generate audio summary. Ensure speech service is running on port 5001.");
+             }
+        } catch (e) {
+             console.error("TTS Error", e);
+             setError("Failed to play audio summary. Ensure speech service is running on port 5001.");
+        } finally {
+             setIsFetchingTTS(false);
+        }
+    };
 
     // --- Form States ---
     const [category, setCategory] = useState('general');
@@ -241,9 +340,29 @@ const Diagnose = () => {
 
                         {/* Summary */}
                         <div className="bg-[#1A1D24]/80 border border-[#EAEAEA]/10 p-8 rounded-xl backdrop-blur-md">
-                            <h2 className="text-[#EAEAEA]/50 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <FileText size={16} className="text-[#08D9D6]" /> Executive Summary
-                            </h2>
+                            <div className="flex justify-between items-center mb-3">
+                                <h2 className="text-[#EAEAEA]/50 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <FileText size={16} className="text-[#08D9D6]" /> Executive Summary
+                                </h2>
+                                <button
+                                    onClick={() => handleTTS(reportData.summary || 'No summary provided.')}
+                                    disabled={isFetchingTTS}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
+                                        isPlayingTTS 
+                                        ? 'bg-[#a855f7]/20 text-[#a855f7] border border-[#a855f7]/50'
+                                        : 'bg-[#08D9D6]/10 text-[#08D9D6] border border-[#08D9D6]/30 hover:bg-[#08D9D6] hover:text-[#252A34]'
+                                    }`}
+                                >
+                                    {isFetchingTTS ? (
+                                        <Loader2 size={14} className="animate-spin" />
+                                    ) : isPlayingTTS ? (
+                                        <StopCircle size={14} />
+                                    ) : (
+                                        <Volume2 size={14} />
+                                    )}
+                                    {isFetchingTTS ? 'Loading...' : isPlayingTTS ? 'Stop Audio' : 'Play Audio'}
+                                </button>
+                            </div>
                             <p className="text-[#EAEAEA]/90 leading-relaxed text-lg">
                                 {reportData.summary || 'No summary provided.'}
                             </p>
@@ -358,6 +477,14 @@ const Diagnose = () => {
                     </div>
                 </div>
 
+                {/* Saved to History Badge */}
+                {reportData._id && (
+                    <div className="flex items-center justify-center gap-3 mb-6 py-3 px-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl w-fit mx-auto">
+                        <CheckCircle2 size={18} className="text-emerald-400" />
+                        <span className="text-emerald-400 text-sm font-bold uppercase tracking-widest">Saved to History</span>
+                    </div>
+                )}
+
                 {/* Bottom Actions */}
                 <div className="border-t border-[#EAEAEA]/10 pt-8 flex flex-col sm:flex-row justify-center gap-6">
                     <button 
@@ -378,6 +505,14 @@ const Diagnose = () => {
                             <Download size={20} />
                         )}
                         Download PDF Report
+                    </button>
+
+                    <button 
+                        onClick={() => navigate('/history')}
+                        className="px-10 py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold uppercase tracking-widest rounded-xl hover:border-[#a855f7] hover:text-[#a855f7] transition-all flex items-center justify-center gap-3"
+                    >
+                        <History size={20} />
+                        View All History
                     </button>
                 </div>
             </div>
@@ -459,10 +594,32 @@ const Diagnose = () => {
 
                 {/* Describe it */}
                 <div className="bg-[#1A1D24]/50 border border-[#EAEAEA]/10 p-8 rounded-2xl backdrop-blur-sm">
-                    <label className="text-sm font-bold uppercase tracking-widest text-[#EAEAEA]/70 mb-4 flex items-center gap-2">
-                        <MessageSquareText size={18} className="text-[#08D9D6]" /> 
-                        {isScanMode ? 'Anything else we should know?' : 'What are you experiencing?'}
-                    </label>
+                    <div className="flex justify-between items-center mb-4">
+                        <label className="text-sm font-bold uppercase tracking-widest text-[#EAEAEA]/70 flex items-center gap-2">
+                            <MessageSquareText size={18} className="text-[#08D9D6]" /> 
+                            {isScanMode ? 'Anything else we should know?' : 'What are you experiencing?'}
+                        </label>
+                        <button 
+                            type="button"
+                            onClick={toggleRecording}
+                            disabled={isProcessingAudio}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
+                                isRecording 
+                                ? 'bg-[#FF2E63]/20 text-[#FF2E63] border border-[#FF2E63]/50 animate-pulse' 
+                                : isProcessingAudio
+                                    ? 'bg-[#08D9D6]/10 text-[#08D9D6]/50 border border-[#08D9D6]/20 cursor-not-allowed'
+                                    : 'bg-[#08D9D6]/10 text-[#08D9D6] border border-[#08D9D6]/30 hover:bg-[#08D9D6] hover:text-[#252A34]'
+                            }`}
+                        >
+                            {isProcessingAudio ? (
+                                <><Loader2 size={14} className="animate-spin" /> Processing...</>
+                            ) : isRecording ? (
+                                <><StopCircle size={14} /> Stop Recording</>
+                            ) : (
+                                <><Mic size={14} /> Voice Input</>
+                            )}
+                        </button>
+                    </div>
                     <textarea
                         value={symptoms}
                         onChange={(e) => setSymptoms(e.target.value)}

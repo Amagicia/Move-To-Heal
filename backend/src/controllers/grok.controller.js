@@ -2,16 +2,13 @@
  * Diagnose Controller
  *
  * Handles text-based symptom analysis via Groq LLM.
- * Used when the user selects a symptom-based focus area
- * (general, dermatology, respiratory, cardiology, radiology).
+ * Saves every diagnosis to DB history automatically.
  *
  * POST /api/diagnose
- *
- * NOTE: No auth middleware — open access for now.
- * TODO: Attach auth middleware when user system is enforced.
  */
 
 import analyzeWithGrok from '../services/grokService.js';
+import Diagnosis from '../models/Diagnosis.model.js';
 
 const generateDiagnosis = async (req, res) => {
     try {
@@ -35,7 +32,27 @@ const generateDiagnosis = async (req, res) => {
         console.log(`[Diagnose] ${category} | ${durationDays} days`);
 
         const report = await analyzeWithGrok(category, durationDays, symptoms);
-        res.status(200).json(report);
+
+        // ─── Save to DB ────────────────────────────────
+        const saved = await Diagnosis.create({
+            type:       category || 'general',
+            mode:       'symptom',
+            duration:   Number(durationDays) || 1,
+            symptoms:   symptoms || '',
+            risk_level:  report.risk_level,
+            confidence:  report.confidence,
+            summary:     report.summary,
+            advice:      report.advice,
+            conditions:          report.conditions  || [],
+            specialists:         report.specialists || [],
+            next_steps:          report.next_steps  || [],
+            recommended_actions: report.next_steps  || [],
+        });
+
+        console.log(`[Diagnose] ✅ Saved to history: ${saved._id}`);
+
+        // Return report + saved document ID
+        res.status(200).json({ ...report, _id: saved._id });
 
     } catch (error) {
         console.error('[Diagnose] Error:', error.message);
