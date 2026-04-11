@@ -18,9 +18,26 @@ const FOCUS_AREAS = [
     { value: 'skin',        label: 'Skin (Photo)',          mode: 'scan'    },
 ];
 
+const LANGUAGES = [
+    { value: 'auto', label: 'Auto-Detect Language' },
+    { value: 'en-IN', label: 'English' },
+    { value: 'hi-IN', label: 'Hindi' },
+    { value: 'bn-IN', label: 'Bengali' },
+    { value: 'ta-IN', label: 'Tamil' },
+    { value: 'te-IN', label: 'Telugu' },
+    { value: 'mr-IN', label: 'Marathi' },
+    { value: 'gu-IN', label: 'Gujarati' },
+    { value: 'kn-IN', label: 'Kannada' },
+    { value: 'ml-IN', label: 'Malayalam' },
+    { value: 'pa-IN', label: 'Punjabi' }
+];
+
 const Diagnose = () => {
     const navigate = useNavigate();
 
+    const [selectedLanguage, setSelectedLanguage] = useState('auto');
+    const [detectedLangLabel, setDetectedLangLabel] = useState('');
+    const [detectedLangCode, setDetectedLangCode] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessingAudio, setIsProcessingAudio] = useState(false);
     const mediaRecorderRef = useRef(null);
@@ -54,20 +71,37 @@ const Diagnose = () => {
                     setIsProcessingAudio(true);
                     const formData = new FormData();
                     formData.append('file', audioBlob, 'recording.webm');
+                    formData.append('language_code', selectedLanguage);
                     try {
                         const res = await fetch('http://localhost:5001/api/stt', {
                             method: 'POST',
                             body: formData
                         });
                         const data = await res.json();
-                        if (data.transcript) {
+                        if (!res.ok) {
+                             setError("STT error: " + (data.details || data.error || 'Unknown error'));
+                        } else if (data.transcript) {
                              setSymptoms(prev => prev ? prev + ' ' + data.transcript : data.transcript);
-                        } else if (data.error) {
-                             setError("STT service error: " + data.error);
+                             // Store detected language for TTS and update UI
+                             if (data.language_code) {
+                                  setDetectedLangCode(data.language_code);
+                                  const match = LANGUAGES.find(l => l.value === data.language_code);
+                                  const langName = match ? match.label : data.language_code;
+                                  const probText = data.language_probability 
+                                       ? ` (${Math.round(data.language_probability * 100)}% confidence)` 
+                                       : '';
+                                  setDetectedLangLabel(langName + probText);
+                                  // Auto-switch dropdown to the detected language
+                                  if (data.language_code !== selectedLanguage) {
+                                       setSelectedLanguage(data.language_code);
+                                  }
+                             }
+                        } else {
+                             setError("No speech detected. Please try again.");
                         }
                     } catch(e) {
                         console.error("STT Error", e);
-                        setError("Failed to process speech-to-text. Ensure speech service is running on port 5001.");
+                        setError("Speech service unavailable. Ensure it is running on port 5001.");
                     } finally {
                         setIsProcessingAudio(false);
                     }
@@ -93,10 +127,13 @@ const Diagnose = () => {
 
         setIsFetchingTTS(true);
         try {
+             // Always use STT-detected language first → then dropdown → then en-IN
+             const languageToSend = detectedLangCode 
+                  || (selectedLanguage !== 'auto' ? selectedLanguage : 'en-IN');
              const res = await fetch('http://localhost:5001/api/tts', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ text })
+                 body: JSON.stringify({ text, target_language_code: languageToSend })
              });
              const data = await res.json();
              if (data.audio) {
@@ -128,6 +165,58 @@ const Diagnose = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [reportData, setReportData] = useState(null);
+    const [translatedReport, setTranslatedReport] = useState(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    // ==========================================
+    // TRANSLATE REPORT — uses Sarvam mayura:v1
+    // ==========================================
+    const translateText = async (text, targetLang) => {
+        if (!text || targetLang === 'en-IN') return text;
+        try {
+            const res = await fetch('http://localhost:5001/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text,
+                    source_language_code: 'en-IN',
+                    target_language_code: targetLang
+                })
+            });
+            const data = await res.json();
+            return data.translated_text || text;
+        } catch {
+            return text;
+        }
+    };
+
+    const translateReport = async (report, targetLang) => {
+        if (!report || targetLang === 'en-IN') return null;
+        setIsTranslating(true);
+        try {
+            const [summary, advice] = await Promise.all([
+                translateText(report.summary || '', targetLang),
+                translateText(report.advice || '', targetLang)
+            ]);
+
+            // Translate conditions and next_steps arrays
+            const conditions = report.conditions?.length
+                ? await Promise.all(report.conditions.map(c => translateText(c, targetLang)))
+                : [];
+            const next_steps = report.next_steps?.length
+                ? await Promise.all(report.next_steps.map(s => translateText(s, targetLang)))
+                : [];
+
+            const translated = { summary, advice, conditions, next_steps };
+            setTranslatedReport(translated);
+            return translated;
+        } catch (e) {
+            console.error('Translation error:', e);
+            return null;
+        } finally {
+            setIsTranslating(false);
+        }
+    };
 
     // Derived state
     const currentArea = FOCUS_AREAS.find(a => a.value === category) || FOCUS_AREAS[0];
@@ -190,6 +279,24 @@ const Diagnose = () => {
 
             setReportData(data);
 
+            // Determine target language for translation
+            const targetLang = detectedLangCode 
+                || (selectedLanguage !== 'auto' ? selectedLanguage : 'en-IN');
+
+            if (targetLang !== 'en-IN') {
+                // Translate report then auto-speak translated summary
+                const translated = await translateReport(data, targetLang);
+                if (translated?.summary) {
+                    setTimeout(() => handleTTS(translated.summary), 500);
+                }
+            } else {
+                // English — just auto-speak the original summary
+                const summaryText = data.summary || data.advice || '';
+                if (summaryText) {
+                    setTimeout(() => handleTTS(summaryText), 500);
+                }
+            }
+
         } catch (err) {
             setError(err.message || 'Analysis failed. Please try again.');
             console.error('Analysis error:', err);
@@ -241,6 +348,11 @@ const Diagnose = () => {
         setFile(null);
         setCategory('general');
         setError('');
+        setSelectedLanguage('auto');
+        setDetectedLangCode('');
+        setDetectedLangLabel('');
+        setTranslatedReport(null);
+        setIsTranslating(false);
     };
 
     // ==========================================
@@ -283,6 +395,13 @@ const Diagnose = () => {
                 {error && (
                     <div className="bg-[#FF2E63]/10 border border-[#FF2E63] text-[#FF2E63] px-4 py-3 rounded mb-8 text-sm font-medium">
                         <AlertTriangle size={20} className="inline mr-2 -mt-1" /> {error}
+                    </div>
+                )}
+
+                {/* Translation in progress indicator */}
+                {isTranslating && (
+                    <div className="bg-[#a855f7]/10 border border-[#a855f7]/30 text-[#a855f7] px-4 py-3 rounded mb-8 text-sm font-medium flex items-center gap-3">
+                        <Loader2 size={18} className="animate-spin" /> Translating report to {detectedLangLabel || 'detected language'}...
                     </div>
                 )}
 
@@ -345,7 +464,7 @@ const Diagnose = () => {
                                     <FileText size={16} className="text-[#08D9D6]" /> Executive Summary
                                 </h2>
                                 <button
-                                    onClick={() => handleTTS(reportData.summary || 'No summary provided.')}
+                                    onClick={() => handleTTS(translatedReport?.summary || reportData.summary || 'No summary provided.')}
                                     disabled={isFetchingTTS}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
                                         isPlayingTTS 
@@ -364,8 +483,13 @@ const Diagnose = () => {
                                 </button>
                             </div>
                             <p className="text-[#EAEAEA]/90 leading-relaxed text-lg">
-                                {reportData.summary || 'No summary provided.'}
+                                {translatedReport?.summary || reportData.summary || 'No summary provided.'}
                             </p>
+                            {translatedReport?.summary && (
+                                <p className="text-[#EAEAEA]/40 leading-relaxed text-sm mt-3 italic border-t border-[#EAEAEA]/10 pt-3">
+                                    {reportData.summary}
+                                </p>
+                            )}
                         </div>
 
                         {/* Conditions & Specialists */}
@@ -375,8 +499,8 @@ const Diagnose = () => {
                                     <Activity size={16} className="text-[#FF2E63]" /> Detected Pathology
                                 </h2>
                                 <ul className="space-y-3">
-                                    {(reportData.conditions || []).length > 0 ? (
-                                        reportData.conditions.map((c, i) => (
+                                    {((translatedReport?.conditions?.length ? translatedReport.conditions : reportData.conditions) || []).length > 0 ? (
+                                        ((translatedReport?.conditions?.length ? translatedReport.conditions : reportData.conditions) || []).map((c, i) => (
                                             <li key={i} className="flex items-start gap-3 text-[#EAEAEA] font-medium">
                                                 <span className={`mt-1.5 w-2 h-2 rounded-full ${isHighRisk ? 'bg-[#FF2E63]' : 'bg-[#08D9D6]'}`}></span>
                                                 {c}
@@ -413,11 +537,11 @@ const Diagnose = () => {
                                 <ListChecks size={18} /> Immediate Action Plan
                             </h2>
                             <p className="text-[#EAEAEA] font-bold text-lg mb-4">
-                                {reportData.advice || 'Please consult a healthcare professional.'}
+                                {translatedReport?.advice || reportData.advice || 'Please consult a healthcare professional.'}
                             </p>
                             <ul className="space-y-3">
-                                {(reportData.next_steps || []).length > 0 ? (
-                                    reportData.next_steps.map((step, i) => (
+                                {((translatedReport?.next_steps?.length ? translatedReport.next_steps : reportData.next_steps) || []).length > 0 ? (
+                                    ((translatedReport?.next_steps?.length ? translatedReport.next_steps : reportData.next_steps) || []).map((step, i) => (
                                         <li key={i} className="flex items-start gap-3 text-[#EAEAEA]/80">
                                             <span className="text-sm font-mono opacity-50 mt-0.5">0{i + 1}.</span>
                                             {step}
@@ -542,6 +666,27 @@ const Diagnose = () => {
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 
+                {/* Language Selection */}
+                <div className="bg-[#1A1D24]/50 border border-[#EAEAEA]/10 p-6 rounded-2xl backdrop-blur-sm flex flex-col justify-center">
+                    <label className="text-sm font-bold uppercase tracking-widest text-[#EAEAEA]/70 mb-3 flex items-center gap-2">
+                        <Volume2 size={18} className="text-[#08D9D6]" /> Preferred Language
+                    </label>
+                    <select 
+                        value={selectedLanguage}
+                        onChange={(e) => { setSelectedLanguage(e.target.value); setDetectedLangLabel(''); setDetectedLangCode(''); }}
+                        className="w-full bg-[#252A34] border border-[#EAEAEA]/20 rounded-xl p-4 text-[#EAEAEA] font-medium focus:outline-none focus:border-[#08D9D6] focus:ring-1 focus:ring-[#08D9D6] transition-all cursor-pointer"
+                    >
+                        {LANGUAGES.map(lang => (
+                            <option key={lang.value} value={lang.value}>{lang.label}</option>
+                        ))}
+                    </select>
+                    {detectedLangLabel && (
+                        <p className="text-xs text-[#08D9D6] mt-2 flex items-center gap-1.5">
+                            <CheckCircle2 size={12} /> Detected: <span className="font-bold">{detectedLangLabel}</span> — report audio will play in this language
+                        </p>
+                    )}
+                </div>
+
                 {/* Row: Focus Area and Duration */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     
