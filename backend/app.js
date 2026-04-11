@@ -45,7 +45,15 @@ const app = express();
 // Allow requests from the React dev server.
 // TODO: Update origin for production deployment.
 app.use(cors({
-    origin: 'http://localhost:5174',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (curl, mobile apps, etc.)
+        if (!origin) return callback(null, true);
+        // Allow any localhost port during development
+        if (/^http:\/\/localhost:\d+$/.test(origin)) {
+            return callback(null, true);
+        }
+        callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 

@@ -1,0 +1,38 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 2369 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m    0.91 kB[22m[1m[22m[2m Γöé gzip:   0.51 kB[22m
+[2mdist/[22m[35massets/index-BgRc9p8B.css  [39m[1m[2m   39.92 kB[22m[1m[22m[2m Γöé gzip:   6.82 kB[22m
+[2mdist/[22m[36massets/index-IQ98YmCA.js   [39m[1m[33m1,381.91 kB[39m[22m[2m Γöé gzip: 402.11 kB[22m
+node.exe : [33m
+At C:\Program 
+Files\nodejs\npx.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo         
+     : NotSpecified: ([3  
+  3m:String) [], RemoteE   
+ xception
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+(!) Some chunks are larger 
+than 500 kB after 
+minification. Consider:
+- Using dynamic import() 
+to code-split the 
+application
+- Use build.rollupOptions.o
+utput.manualChunks to 
+improve chunking: https://r
+ollupjs.org/configuration-o
+ptions/#output-manualchunks
+- Adjust chunk size limit 
+for this warning via build.
+chunkSizeWarningLimit.[39m
+[32mΓ£ô built in 11.58s[39m

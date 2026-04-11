@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, RefreshCw, FileText, Activity, Clock, Loader2, AlertTriangle, Inbox } from 'lucide-react';
+import { 
+    Download, RefreshCw, FileText, Activity, Clock, 
+    Loader2, AlertTriangle, Inbox, Search, Filter, Send 
+} from 'lucide-react';
 
 const API_BASE = 'http://localhost:5000';
 
-// Label map for human-friendly display
 const TYPE_LABELS = {
     general:     'General Health',
     respiratory: 'Breathing & Lungs',
@@ -17,12 +19,17 @@ const TYPE_LABELS = {
 };
 
 const History = () => {
-    const [history, setHistory]     = useState([]);
-    const [loading, setLoading]     = useState(true);
-    const [error, setError]         = useState('');
-    const [downloading, setDownloading] = useState(null); // track which ID is downloading
+    const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [downloading, setDownloading] = useState(null);
+    
+    // --- NEW STATES FOR FILTERING & ESCALATION ---
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterRisk, setFilterRisk] = useState('all');
+    const [filterArea, setFilterArea] = useState('all');
+    const [escalating, setEscalating] = useState(null);
 
-    // ─── Fetch history on mount ────────────────────────
     const fetchHistory = async () => {
         setLoading(true);
         setError('');
@@ -40,7 +47,6 @@ const History = () => {
 
     useEffect(() => { fetchHistory(); }, []);
 
-    // ─── Download PDF for a specific record ────────────
     const handleDownload = async (id) => {
         setDownloading(id);
         try {
@@ -48,7 +54,6 @@ const History = () => {
                 method: 'POST',
             });
             if (!res.ok) throw new Error('PDF generation failed');
-
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -66,25 +71,50 @@ const History = () => {
         }
     };
 
-    // ─── Format date ───────────────────────────────────
+    // --- NEW: HOSPITAL ESCALATION LOGIC ---
+    const handleEscalate = async (scan) => {
+        setEscalating(scan._id);
+        try {
+            // Mocking the escalation to a hospital dashboard
+            const res = await fetch(`${API_BASE}/api/hospital/escalate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scanId: scan._id,
+                    patientData: scan,
+                    priority: 'CRITICAL_HIGH_RISK',
+                    timestamp: new Date().toISOString()
+                }),
+            });
+            if (!res.ok) throw new Error('Escalation failed');
+            alert(`SUCCESS: Case ${scan._id.slice(-6)} transmitted to Head Hospital Dashboard.`);
+        } catch (err) {
+            setError('Hospital transmission failed. Ensure manual contact.');
+        } finally {
+            setEscalating(null);
+        }
+    };
+
+    // --- SEARCH & FILTER COMPUTATION ---
+    const filteredHistory = history.filter(item => {
+        const matchesSearch = (item._id + (item.symptoms || '') + item.type).toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRisk = filterRisk === 'all' || (item.risk_level || '').toLowerCase().includes(filterRisk.toLowerCase());
+        const matchesArea = filterArea === 'all' || item.type === filterArea;
+        return matchesSearch && matchesRisk && matchesArea;
+    });
+
     const formatDate = (dateStr) => {
         const d = new Date(dateStr);
         const now = new Date();
         const diffMs = now - d;
         const diffMin = Math.floor(diffMs / 60000);
         const diffHr  = Math.floor(diffMs / 3600000);
-
         if (diffMin < 1)  return 'Just now';
         if (diffMin < 60) return `${diffMin}m ago`;
         if (diffHr < 24)  return `${diffHr}h ago`;
-
-        return d.toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-        });
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    // ─── Risk badge color ──────────────────────────────
     const getRiskBadge = (risk) => {
         const r = (risk || '').toLowerCase();
         if (r.includes('high'))   return 'text-[#FF2E63] border-[#FF2E63]/30 bg-[#FF2E63]/10';
@@ -92,7 +122,6 @@ const History = () => {
         return 'text-[#08D9D6] border-[#08D9D6]/30 bg-[#08D9D6]/10';
     };
 
-    // ─── Mode badge ────────────────────────────────────
     const getModeBadge = (mode) => {
         if (mode === 'scan') return { label: 'AI Scan', color: 'text-[#a855f7] bg-[#a855f7]/10 border-[#a855f7]/30' };
         return { label: 'Symptom', color: 'text-[#08D9D6] bg-[#08D9D6]/10 border-[#08D9D6]/30' };
@@ -100,7 +129,6 @@ const History = () => {
 
     return (
         <div className="w-full max-w-6xl mx-auto py-12 px-6 lg:px-12 relative z-10 min-h-screen">
-
             {/* Header */}
             <div className="mb-12 border-b border-[#EAEAEA]/10 pb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
@@ -108,59 +136,70 @@ const History = () => {
                     <p className="text-[#08D9D6] tracking-widest uppercase text-sm font-bold">
                         Historical Telemetry & Reports
                         {history.length > 0 && (
-                            <span className="text-[#EAEAEA]/40 ml-3">— {history.length} record{history.length !== 1 ? 's' : ''}</span>
+                            <span className="text-[#EAEAEA]/40 ml-3">— {history.length} records</span>
                         )}
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <button 
-                        onClick={fetchHistory}
-                        disabled={loading}
-                        className="px-5 py-3 bg-[#252A34] border border-[#EAEAEA]/20 text-[#EAEAEA]/70 font-bold rounded-lg hover:border-[#08D9D6] hover:text-[#08D9D6] transition-all text-sm uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                        Refresh
+                    <button onClick={fetchHistory} disabled={loading} className="px-5 py-3 bg-[#252A34] border border-[#EAEAEA]/20 text-[#EAEAEA]/70 font-bold rounded-lg hover:border-[#08D9D6] hover:text-[#08D9D6] transition-all text-sm uppercase tracking-wider flex items-center gap-2 disabled:opacity-50">
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
-                    <Link to="/diagnose" className="px-6 py-3 bg-[#08D9D6]/10 border border-[#08D9D6]/30 text-[#08D9D6] font-bold rounded-lg hover:bg-[#08D9D6] hover:text-[#252A34] transition-all text-sm uppercase tracking-wider">
+                    <Link to="/diagnose" className="px-6 py-3 bg-[#08D9D6] text-[#252A34] font-bold rounded-lg hover:scale-105 transition-all text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(8,217,214,0.3)]">
                         + New Scan
                     </Link>
                 </div>
             </div>
 
-            {/* Error */}
+            {/* --- NEW: SEARCH & FILTER BAR --- */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div className="md:col-span-2 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#EAEAEA]/30" size={18} />
+                    <input 
+                        type="text" 
+                        placeholder="Search by ID or symptoms..."
+                        className="w-full bg-[#1A1D24] border border-[#EAEAEA]/10 rounded-xl py-3 pl-12 pr-4 text-[#EAEAEA] focus:outline-none focus:border-[#08D9D6] transition-all"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <select 
+                    className="bg-[#1A1D24] border border-[#EAEAEA]/10 rounded-xl py-3 px-4 text-[#EAEAEA] focus:outline-none focus:border-[#08D9D6]"
+                    onChange={(e) => setFilterRisk(e.target.value)}
+                >
+                    <option value="all">All Risk Levels</option>
+                    <option value="high">High Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="low">Low Risk</option>
+                </select>
+                <select 
+                    className="bg-[#1A1D24] border border-[#EAEAEA]/10 rounded-xl py-3 px-4 text-[#EAEAEA] focus:outline-none focus:border-[#08D9D6]"
+                    onChange={(e) => setFilterArea(e.target.value)}
+                >
+                    <option value="all">All Focus Areas</option>
+                    {Object.keys(TYPE_LABELS).map(key => (
+                        <option key={key} value={key}>{TYPE_LABELS[key]}</option>
+                    ))}
+                </select>
+            </div>
+
             {error && (
                 <div className="bg-[#FF2E63]/10 border border-[#FF2E63] text-[#FF2E63] px-4 py-3 rounded-xl mb-8 text-sm font-medium flex items-center gap-2">
                     <AlertTriangle size={18} /> {error}
-                    <button onClick={() => setError('')} className="ml-auto text-[#FF2E63]/70 hover:text-[#FF2E63]">✕</button>
                 </div>
             )}
 
-            {/* Loading State */}
-            {loading && (
+            {loading ? (
                 <div className="flex flex-col items-center justify-center py-24">
                     <Loader2 size={48} className="text-[#08D9D6] animate-spin mb-6" />
                     <p className="text-[#EAEAEA]/50 uppercase tracking-widest text-sm font-bold">Loading History...</p>
                 </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && history.length === 0 && (
+            ) : filteredHistory.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="w-24 h-24 rounded-full bg-[#1A1D24] border-2 border-[#EAEAEA]/10 flex items-center justify-center mb-6">
-                        <Inbox size={40} className="text-[#EAEAEA]/20" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-[#EAEAEA]/50 mb-3">No Diagnostics Yet</h2>
-                    <p className="text-[#EAEAEA]/30 mb-8 max-w-md">
-                        Your diagnostic history will appear here after you run your first analysis. Each scan is saved automatically.
-                    </p>
-                    <Link to="/diagnose" className="px-8 py-4 bg-[#08D9D6] text-[#252A34] font-black uppercase tracking-widest rounded-xl hover:bg-[#08D9D6]/90 transition-all shadow-[0_0_15px_rgba(8,217,214,0.3)]">
-                        Start Your First Scan
-                    </Link>
+                    <Inbox size={40} className="text-[#EAEAEA]/20 mb-6" />
+                    <h2 className="text-2xl font-bold text-[#EAEAEA]/50 mb-3">No Results Found</h2>
+                    <p className="text-[#EAEAEA]/30">Adjust your search or filters to see more records.</p>
                 </div>
-            )}
-
-            {/* History Table */}
-            {!loading && history.length > 0 && (
+            ) : (
                 <div className="bg-[#1A1D24]/80 border border-[#EAEAEA]/10 rounded-2xl backdrop-blur-md overflow-hidden shadow-2xl">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -169,66 +208,51 @@ const History = () => {
                                     <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest">Scan ID</th>
                                     <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest">Date / Time</th>
                                     <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest">Focus Area</th>
-                                    <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest">Mode</th>
                                     <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest">Risk Level</th>
                                     <th className="p-5 text-xs font-bold text-[#EAEAEA]/50 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#EAEAEA]/5">
-                                {history.map((scan) => {
+                                {filteredHistory.map((scan) => {
                                     const modeBadge = getModeBadge(scan.mode);
-                                    const isCurrentlyDownloading = downloading === scan._id;
+                                    const isHighRisk = (scan.risk_level || '').toLowerCase().includes('high');
 
                                     return (
                                         <tr key={scan._id} className="hover:bg-[#252A34]/50 transition-colors group">
-                                            {/* ID */}
                                             <td className="p-5">
                                                 <span className="text-xs font-mono text-[#EAEAEA]/50 bg-[#252A34] px-3 py-1.5 rounded-md border border-[#EAEAEA]/10">
                                                     {scan._id.slice(-8).toUpperCase()}
                                                 </span>
                                             </td>
-
-                                            {/* Date */}
                                             <td className="p-5">
-                                                <div className="flex items-center gap-2">
-                                                    <Clock size={14} className="text-[#EAEAEA]/30" />
-                                                    <span className="text-sm font-medium text-[#EAEAEA]">{formatDate(scan.createdAt)}</span>
-                                                </div>
+                                                <span className="text-sm font-medium text-[#EAEAEA]">{formatDate(scan.createdAt)}</span>
                                             </td>
-
-                                            {/* Focus Area */}
                                             <td className="p-5 text-sm text-[#EAEAEA]/80 font-medium">
                                                 {TYPE_LABELS[scan.type] || scan.type}
                                             </td>
-
-                                            {/* Mode Badge */}
-                                            <td className="p-5">
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${modeBadge.color}`}>
-                                                    {modeBadge.label}
-                                                </span>
-                                            </td>
-
-                                            {/* Risk */}
                                             <td className="p-5">
                                                 <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border ${getRiskBadge(scan.risk_level)}`}>
                                                     {scan.risk_level || 'Unknown'}
                                                 </span>
                                             </td>
-
-                                            {/* Actions */}
                                             <td className="p-5 text-right">
                                                 <div className="flex items-center justify-end gap-3">
+                                                    {/* ESCALATE BUTTON FOR HIGH RISK */}
+                                                    {isHighRisk && (
+                                                        <button 
+                                                            onClick={() => handleEscalate(scan)}
+                                                            disabled={escalating === scan._id}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-[#FF2E63]/10 border border-[#FF2E63]/30 text-[#FF2E63] font-bold rounded-lg hover:bg-[#FF2E63] hover:text-white transition-all text-xs uppercase tracking-wider"
+                                                        >
+                                                            {escalating === scan._id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                                            Escalate
+                                                        </button>
+                                                    )}
                                                     <button 
                                                         onClick={() => handleDownload(scan._id)}
-                                                        disabled={isCurrentlyDownloading}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-[#08D9D6]/10 border border-[#08D9D6]/30 text-[#08D9D6] font-bold rounded-lg hover:bg-[#08D9D6] hover:text-[#252A34] transition-all text-xs uppercase tracking-wider disabled:opacity-50"
+                                                        className="flex items-center gap-2 px-4 py-2 bg-[#08D9D6]/10 border border-[#08D9D6]/30 text-[#08D9D6] font-bold rounded-lg hover:bg-[#08D9D6] hover:text-[#252A34] transition-all text-xs uppercase tracking-wider"
                                                     >
-                                                        {isCurrentlyDownloading ? (
-                                                            <Loader2 size={14} className="animate-spin" />
-                                                        ) : (
-                                                            <Download size={14} />
-                                                        )}
-                                                        {isCurrentlyDownloading ? 'Generating...' : 'PDF'}
+                                                        <Download size={14} /> PDF
                                                     </button>
                                                 </div>
                                             </td>
@@ -237,17 +261,6 @@ const History = () => {
                                 })}
                             </tbody>
                         </table>
-                    </div>
-
-                    {/* Footer summary */}
-                    <div className="border-t border-[#EAEAEA]/5 bg-[#252A34]/50 px-6 py-4 flex items-center justify-between">
-                        <p className="text-xs text-[#EAEAEA]/30 uppercase tracking-widest flex items-center gap-2">
-                            <FileText size={14} />
-                            {history.length} diagnostic record{history.length !== 1 ? 's' : ''}
-                        </p>
-                        <p className="text-xs text-[#EAEAEA]/20 italic">
-                            All scans are auto-saved • Download PDF for any record
-                        </p>
                     </div>
                 </div>
             )}

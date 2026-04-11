@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "overview": "Overview",
+    "signup": "Signup | Login",
+    "howItWorks": "How It Works",
+    "newScan": "New Scan"
+  },
+  "hero": {
+    "badge": "Move to Heal Initiative",
+    "heading1": "Precision Path.",
+    "heading2": "Your Health,",
+    "dynamicWords": ["Optimized", "Intelligent", "Reimagined"],
+    "subtitle": "AegisMed's neural engine analyzes scans and symptoms instantly, paving the way for proactive wellness through advanced AI.",
+    "ctaScan": "Start Free Scan",
+    "ctaTech": "The Tech Stack"
+  },
+  "flow": {
+    "label": "The Diagnostic Flow",
+    "heading": "From Symptoms to Clarity",
+    "subtitle": "A seamless, private, and instantaneous process designed to give you answers when you need them most.",
+    "step1Title": "1. NLP Symptom Tracking",
+    "step1Desc": "Type how you're feeling naturally. Our Natural Language Processor translates your words into standardized clinical markers.",
+    "step2Title": "2. Visual AI Scans",
+    "step2Desc": "Securely upload photos of skin anomalies or radiological scans. Our computer vision model detects patterns invisible to the untrained eye.",
+    "step3Title": "3. Instant Triage",
+    "step3Desc": "The neural engine cross-references your inputs against millions of data points to instantly assign a Low, Medium, or High risk level.",
+    "step4Title": "4. Actionable Reports",
+    "step4Desc": "Receive a clear, plain-English summary of potential conditions and exact next steps to take to your healthcare provider."
+  },
+  "capabilities": {
+    "label": "Comprehensive Analysis",
+    "heading": "What AegisMed Detects",
+    "generalTitle": "General Symptoms",
+    "generalDesc": "From chronic fatigue to sudden acute pain, our NLP engine cross-references thousands of symptom combinations to provide accurate preliminary triage.",
+    "dermaTitle": "Dermatology",
+    "dermaDesc": "Upload close-up imagery of rashes, moles, or lesions. Our vision model identifies visual markers associated with over 150 dermatological conditions.",
+    "radioTitle": "Radiology Assist",
+    "radioDesc": "Need a second look at an X-ray or MRI? AegisMed highlights anomalies and provides supplementary context for you and your specialist to review."
+  },
+  "trust": {
+    "label": "Core Trust & Innovation",
+    "heading": "Advanced neural modeling for maximum security.",
+    "description": "AegisMed leverages proprietary neural network architectures, trained ephemerally and utilizing end-to-end encryption. Your medical telemetry and personal data are processed in volatile memory and instantly destroyed upon analysis completion, ensuring unparalleled privacy and security. We operate with zero data retention, prioritizing HIPAA alignment at every level.",
+    "disclaimer": "AegisMed is an AI-powered informational tool. It is NOT a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider. If you think you may have a medical emergency, call your doctor or emergency services immediately.",
+    "feature1Title": "Aegis-Vision Neural Engine",
+    "feature1Desc": "Proprietary CNN trained ephemerally on millions of radiological and dermatological images for unparalleled screening precision.",
+    "feature2Title": "NLP-Core Symptom Synthesis",
+    "feature2Desc": "Transformer-based language model, fine-tuned on vast medical corpora, translates descriptions into precise pathology matching."
+  },
+  "cta": {
+    "heading": "Step Towards Healing Today",
+    "subtitle": "AegisMed's Move to Heal initiative is here to support you. Instant, secure insights are just a click away. Prioritize your well-being and let our AI assist your proactive healthcare journey.",
+    "button": "Start Free Diagnosis"
+  },
+  "footer": {
+    "brand": "Move <1>to</1> Heal",
+    "description": "AegisMed utilizes advanced neural networks to provide preliminary diagnostic insights.",
+    "disclaimer": "This tool is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician.",
+    "engineLabel": "Engine",
+    "initScan": "Initialize Scan",
+    "conditions": "Supported Conditions",
+    "modelArch": "Model Architecture",
+    "sysStatus": "System Status",
+    "complianceLabel": "Compliance",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "hipaa": "HIPAA Alignment",
+    "dataDelete": "Data Deletion Request",
+    "copyright": "© {{year}} AegisMed Technologies. All rights reserved.",
+    "operational": "Systems Operational"
+  }
+}

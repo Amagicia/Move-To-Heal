@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import FeatureCard from "../components/FeatureCard";
 import StatBadge from "../components/StatBadge";
 import ThreeDStats from "../components/ThreeDStats";
@@ -16,9 +17,10 @@ import {
 } from "lucide-react";
 import MedicalHelix from "../components/MedicalHelix";
 const Home = () => {
+    const { t } = useTranslation();
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-    const dynamicWords = ["Optimized", "Intelligent", "Reimagined"];
+    const dynamicWords = t('hero.dynamicWords', { returnObjects: true });
 
     const [wordIndex, setWordIndex] = useState(0);
     const [fadeProp, setFadeProp] = useState(true);
@@ -67,13 +69,13 @@ const Home = () => {
                     <div className="md:w-3/5 text-left z-20">
                         <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-[#08D9D6]/30 bg-[#08D9D6]/10 text-[#08D9D6] text-xs font-bold tracking-widest uppercase mb-8">
                             <span className="w-2 h-2 rounded-full bg-[#FF2E63] animate-ping"></span>
-                            Move to Heal Initiative
+                            {t('hero.badge')}
                         </div>
 
                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-[#EAEAEA] mb-6 tracking-tighter leading-none">
-                            Precision Path. <br />
+                            {t('hero.heading1')} <br />
                             <span className="text-[#EAEAEA]/80">
-                                Your Health,{" "}
+                                {t('hero.heading2')}{" "}
                             </span>
                             <span
                                 className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#08D9D6] to-[#00FFF0] transition-all duration-500 ${
@@ -87,9 +89,7 @@ const Home = () => {
                         </h1>
 
                         <p className="text-lg md:text-xl text-[#EAEAEA]/70 mb-10 max-w-xl leading-relaxed">
-                            AegisMed's neural engine analyzes scans and symptoms
-                            instantly, paving the way for proactive wellness
-                            through advanced AI.
+                            {t('hero.subtitle')}
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-5">
@@ -97,14 +97,14 @@ const Home = () => {
                                 to="/diagnose"
                                 className="px-8 py-4 bg-[#08D9D6] text-[#252A34] font-black rounded-xl hover:scale-105 transition-all shadow-[0_0_30px_rgba(8,217,214,0.4)] text-center uppercase tracking-widest"
                             >
-                                Start Free Scan
+                                {t('hero.ctaScan')}
                             </Link>
 
                             <Link
                                 to="/about"
                                 className="px-8 py-4 border-2 border-[#EAEAEA]/20 text-[#EAEAEA] font-bold rounded-xl hover:border-[#FF2E63] hover:text-[#FF2E63] transition-all text-center uppercase tracking-widest"
                             >
-                                The Tech Stack
+                                {t('hero.ctaTech')}
                             </Link>
                         </div>
                     </div>
@@ -127,15 +127,13 @@ const Home = () => {
                 <section className="w-full max-w-7xl mb-32 border-t border-[#EAEAEA]/10 pt-24 pb-16 px-6 relative">
                     <div className="text-center mb-20">
                         <h2 className="text-[#08D9D6] text-sm font-bold uppercase tracking-widest mb-3">
-                            The Diagnostic Flow
+                            {t('flow.label')}
                         </h2>
                         <h3 className="text-4xl md:text-5xl font-black text-[#EAEAEA] tracking-tight">
-                            From Symptoms to Clarity
+                            {t('flow.heading')}
                         </h3>
                         <p className="text-lg text-[#EAEAEA]/70 mt-5 max-w-2xl mx-auto">
-                            A seamless, private, and instantaneous process
-                            designed to give you answers when you need them
-                            most.
+                            {t('flow.subtitle')}
                         </p>
                     </div>
 
@@ -150,12 +148,10 @@ const Home = () => {
                                 <MessageSquareText size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
-                                1. NLP Symptom Tracking
+                                {t('flow.step1Title')}
                             </h4>
                             <p className="text-[#EAEAEA]/60 text-sm leading-relaxed px-2">
-                                Type how you're feeling naturally. Our Natural
-                                Language Processor translates your words into
-                                standardized clinical markers.
+                                {t('flow.step1Desc')}
                             </p>
                         </div>
 
@@ -165,12 +161,10 @@ const Home = () => {
                                 <Camera size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
-                                2. Visual AI Scans
+                                {t('flow.step2Title')}
                             </h4>
                             <p className="text-[#EAEAEA]/60 text-sm leading-relaxed px-2">
-                                Securely upload photos of skin anomalies or
-                                radiological scans. Our computer vision model
-                                detects patterns invisible to the untrained eye.
+                                {t('flow.step2Desc')}
                             </p>
                         </div>
 
@@ -180,12 +174,10 @@ const Home = () => {
                                 <Zap size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
-                                3. Instant Triage
+                                {t('flow.step3Title')}
                             </h4>
                             <p className="text-[#EAEAEA]/60 text-sm leading-relaxed px-2">
-                                The neural engine cross-references your inputs
-                                against millions of data points to instantly
-                                assign a Low, Medium, or High risk level.
+                                {t('flow.step3Desc')}
                             </p>
                         </div>
 
@@ -195,12 +187,10 @@ const Home = () => {
                                 <ClipboardList size={40} />
                             </div>
                             <h4 className="text-xl font-bold text-[#EAEAEA] mb-3">
-                                4. Actionable Reports
+                                {t('flow.step4Title')}
                             </h4>
                             <p className="text-[#EAEAEA]/60 text-sm leading-relaxed px-2">
-                                Receive a clear, plain-English summary of
-                                potential conditions and exact next steps to
-                                take to your healthcare provider.
+                                {t('flow.step4Desc')}
                             </p>
                         </div>
                     </div>
@@ -210,10 +200,10 @@ const Home = () => {
                 <section className="w-full max-w-6xl mb-32 border-t border-[#EAEAEA]/10 pt-24 px-6">
                     <div className="text-center mb-16">
                         <h2 className="text-[#08D9D6] text-sm font-bold uppercase tracking-widest mb-3">
-                            Comprehensive Analysis
+                            {t('capabilities.label')}
                         </h2>
                         <h3 className="text-4xl font-black text-[#EAEAEA] tracking-tight">
-                            What AegisMed Detects
+                            {t('capabilities.heading')}
                         </h3>
                     </div>
 
@@ -224,25 +214,19 @@ const Home = () => {
                                 size={36}
                             />
                             <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
-                                General Symptoms
+                                {t('capabilities.generalTitle')}
                             </h4>
                             <p className="text-[#EAEAEA]/70 leading-relaxed">
-                                From chronic fatigue to sudden acute pain, our
-                                NLP engine cross-references thousands of symptom
-                                combinations to provide accurate preliminary
-                                triage.
+                                {t('capabilities.generalDesc')}
                             </p>
                         </div>
                         <div className="bg-[#EAEAEA]/5 border border-[#EAEAEA]/10 rounded-2xl p-8 hover:bg-[#EAEAEA]/10 transition-colors">
                             <Eye className="text-[#FF2E63] mb-6" size={36} />
                             <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
-                                Dermatology
+                                {t('capabilities.dermaTitle')}
                             </h4>
                             <p className="text-[#EAEAEA]/70 leading-relaxed">
-                                Upload close-up imagery of rashes, moles, or
-                                lesions. Our vision model identifies visual
-                                markers associated with over 150 dermatological
-                                conditions.
+                                {t('capabilities.dermaDesc')}
                             </p>
                         </div>
                         <div className="bg-[#EAEAEA]/5 border border-[#EAEAEA]/10 rounded-2xl p-8 hover:bg-[#EAEAEA]/10 transition-colors">
@@ -251,12 +235,10 @@ const Home = () => {
                                 size={36}
                             />
                             <h4 className="text-2xl font-bold text-[#EAEAEA] mb-4">
-                                Radiology Assist
+                                {t('capabilities.radioTitle')}
                             </h4>
                             <p className="text-[#EAEAEA]/70 leading-relaxed">
-                                Need a second look at an X-ray or MRI? AegisMed
-                                highlights anomalies and provides supplementary
-                                context for you and your specialist to review.
+                                {t('capabilities.radioDesc')}
                             </p>
                         </div>
                     </div>
@@ -266,22 +248,13 @@ const Home = () => {
                 <section className="w-full max-w-6xl mb-32 border-t border-[#EAEAEA]/10 pt-24 px-6 flex flex-col md:flex-row gap-16 items-center">
                     <div className="md:w-1/2">
                         <h2 className="text-[#08D9D6] text-sm font-bold uppercase tracking-widest mb-4">
-                            Core Trust & Innovation
+                            {t('trust.label')}
                         </h2>
                         <h3 className="text-4xl font-black text-[#EAEAEA] mb-6 leading-tight tracking-tight">
-                            Advanced neural modeling{" "}
-                            <br className="hidden md:block" /> for maximum
-                            security.
+                            {t('trust.heading')}
                         </h3>
                         <p className="text-lg text-[#EAEAEA]/75 leading-relaxed mb-6">
-                            AegisMed leverages proprietary neural network
-                            architectures, trained ephemerally and utilizing
-                            end-to-end encryption. Your medical telemetry and
-                            personal data are processed in volatile memory and
-                            instantly destroyed upon analysis completion,
-                            ensuring unparalleled privacy and security. We
-                            operate with zero data retention, prioritizing HIPAA
-                            alignment at every level.
+                            {t('trust.description')}
                         </p>
                         <p className="text-base text-[#FF2E63] font-semibold bg-[#FF2E63]/10 p-5 rounded-lg border border-[#FF2E63]/30">
                             <span className="font-extrabold text-lg mr-2">
@@ -290,26 +263,21 @@ const Home = () => {
                                     className="inline mr-2 -mt-1"
                                 />
                             </span>{" "}
-                            AegisMed is an AI-powered informational tool. It is
-                            NOT a substitute for professional medical advice,
-                            diagnosis, or treatment. Always seek the advice of
-                            your physician or other qualified health provider.
-                            If you think you may have a medical emergency, call
-                            your doctor or emergency services immediately.
+                            {t('trust.disclaimer')}
                         </p>
                     </div>
                     <div className="md:w-1/2 grid grid-cols-1 gap-8">
                         <FeatureCard
                             icon={<Eye size={36} />}
-                            title="Aegis-Vision Neural Engine"
+                            title={t('trust.feature1Title')}
                             isAlert={false}
-                            description="Proprietary CNN trained ephemerally on millions of radiological and dermatological images for unparalleled screening precision."
+                            description={t('trust.feature1Desc')}
                         />
                         <FeatureCard
                             icon={<Dna size={36} />}
-                            title="NLP-Core Symptom Synthesis"
+                            title={t('trust.feature2Title')}
                             isAlert={false}
-                            description="Transformer-based language model, fine-tuned on vast medical corpora, translates descriptions into precise pathology matching."
+                            description={t('trust.feature2Desc')}
                         />
                     </div>
                 </section>
@@ -321,20 +289,17 @@ const Home = () => {
                         <div className="absolute -top-20 -left-20 w-48 h-48 rounded-full bg-[#FF2E63]/5 blur-3xl opacity-30"></div>
                     </div>
                     <h2 className="text-5xl font-black text-[#EAEAEA] mb-10 tracking-tight relative z-10">
-                        Step Towards Healing Today
+                        {t('cta.heading')}
                     </h2>
                     <p className="text-xl text-[#EAEAEA]/70 mb-14 max-w-3xl mx-auto leading-relaxed relative z-10">
-                        AegisMed's Move to Heal initiative is here to support
-                        you. Instant, secure insights are just a click away.
-                        Prioritize your well-being and let our AI assist your
-                        proactive healthcare journey.
+                        {t('cta.subtitle')}
                     </p>
                     <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-6">
                         <Link
                             to="/diagnose"
                             className="px-14 py-6 bg-[#08D9D6] text-[#252A34] font-black tracking-widest uppercase rounded-lg hover:scale-105 transition-all hover:shadow-[0_0_50px_rgba(8,217,214,0.6)] text-xl w-full sm:w-auto"
                         >
-                            Start Free Diagnosis
+                            {t('cta.button')}
                         </Link>
                     </div>
                 </section>

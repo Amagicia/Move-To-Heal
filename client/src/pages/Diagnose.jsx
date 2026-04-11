@@ -279,21 +279,36 @@ const Diagnose = () => {
 
             setReportData(data);
 
+            // Build full report text for TTS reading
+            const buildReportText = (report) => {
+                const parts = [];
+                if (report.summary) parts.push(report.summary);
+                if (report.conditions?.length) {
+                    parts.push('Detected conditions: ' + report.conditions.join(', ') + '.');
+                }
+                if (report.advice) parts.push(report.advice);
+                if (report.next_steps?.length) {
+                    parts.push('Next steps: ' + report.next_steps.join('. ') + '.');
+                }
+                return parts.join(' ') || '';
+            };
+
             // Determine target language for translation
             const targetLang = detectedLangCode 
                 || (selectedLanguage !== 'auto' ? selectedLanguage : 'en-IN');
 
             if (targetLang !== 'en-IN') {
-                // Translate report then auto-speak translated summary
+                // Translate report then auto-speak full translated report
                 const translated = await translateReport(data, targetLang);
-                if (translated?.summary) {
-                    setTimeout(() => handleTTS(translated.summary), 500);
+                if (translated) {
+                    const fullText = buildReportText(translated);
+                    if (fullText) setTimeout(() => handleTTS(fullText), 500);
                 }
             } else {
-                // English — just auto-speak the original summary
-                const summaryText = data.summary || data.advice || '';
-                if (summaryText) {
-                    setTimeout(() => handleTTS(summaryText), 500);
+                // English — auto-speak full original report
+                const fullText = buildReportText(data);
+                if (fullText) {
+                    setTimeout(() => handleTTS(fullText), 500);
                 }
             }
 

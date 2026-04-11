@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-[#252A34] border-t border-[#EAEAEA]/10 pt-16 pb-8 mt-auto relative z-10">
       <div className="max-w-7xl mx-auto px-6">
@@ -13,44 +16,44 @@ const Footer = () => {
               Move <span className="text-[#08D9D6]">to</span> Heal
             </Link>
             <p className="text-[#EAEAEA]/60 text-sm leading-relaxed mb-6 max-w-md">
-              AegisMed utilizes advanced neural networks to provide preliminary diagnostic insights. 
+              {t('footer.description')}
               <span className="text-[#FF2E63] font-bold block mt-2">
-                This tool is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician.
+                {t('footer.disclaimer')}
               </span>
             </p>
           </div>
 
           {/* Product Links */}
           <div>
-            <h4 className="text-[#08D9D6] text-xs font-bold uppercase tracking-widest mb-4">Engine</h4>
+            <h4 className="text-[#08D9D6] text-xs font-bold uppercase tracking-widest mb-4">{t('footer.engineLabel')}</h4>
             <ul className="space-y-3">
-              <li><Link to="/diagnose" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Initialize Scan</Link></li>
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Supported Conditions</Link></li>
-              <li><Link to="/about" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Model Architecture</Link></li>
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">System Status</Link></li>
+              <li><Link to="/diagnose" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.initScan')}</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.conditions')}</Link></li>
+              <li><Link to="/about" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.modelArch')}</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.sysStatus')}</Link></li>
             </ul>
           </div>
 
           {/* Legal & Privacy */}
           <div>
-            <h4 className="text-[#08D9D6] text-xs font-bold uppercase tracking-widest mb-4">Compliance</h4>
+            <h4 className="text-[#08D9D6] text-xs font-bold uppercase tracking-widest mb-4">{t('footer.complianceLabel')}</h4>
             <ul className="space-y-3">
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Privacy Policy</Link></li>
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Terms of Service</Link></li>
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">HIPAA Alignment</Link></li>
-              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">Data Deletion Request</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.privacy')}</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.terms')}</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.hipaa')}</Link></li>
+              <li><Link to="#" className="text-[#EAEAEA]/70 hover:text-[#08D9D6] transition-colors text-sm">{t('footer.dataDelete')}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-[#EAEAEA]/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
           <p className="text-[#EAEAEA]/40 text-xs">
-            © {new Date().getFullYear()} AegisMed Technologies. All rights reserved.
+            {t('footer.copyright', { year: new Date().getFullYear() })}
           </p>
           <div className="flex gap-4">
             <span className="flex items-center gap-2 text-[#EAEAEA]/40 text-xs">
               <span className="w-2 h-2 rounded-full bg-[#08D9D6] animate-pulse"></span>
-              Systems Operational
+              {t('footer.operational')}
             </span>
           </div>
         </div>
